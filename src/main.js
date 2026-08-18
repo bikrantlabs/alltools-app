@@ -24,13 +24,19 @@ function createWindow() {
 }
 
 ipcMain.handle('catalog:list', async () => {
-  const catalogPath = path.resolve(__dirname, '..', '..', 'alltools-plugins', 'catalog', 'catalog.json');
-  try {
-    const raw = await fs.readFile(catalogPath, 'utf8');
-    return JSON.parse(raw);
-  } catch {
-    return { catalogVersion: 1, generatedAt: null, plugins: [] };
+  const candidates = [
+    path.resolve(__dirname, '..', '..', 'alltools-plugins', 'catalog', 'catalog.json'),
+    path.resolve(__dirname, 'catalog', 'catalog.json')
+  ];
+  for (const catalogPath of candidates) {
+    try {
+      const raw = await fs.readFile(catalogPath, 'utf8');
+      return JSON.parse(raw);
+    } catch {
+      // Try the next catalog source.
+    }
   }
+  return { catalogVersion: 1, generatedAt: null, plugins: [] };
 });
 
 app.whenReady().then(() => {
