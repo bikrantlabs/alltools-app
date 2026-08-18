@@ -7,6 +7,7 @@ const pluginId = 'image-convert';
 const acceptedExtensions = ['.png', '.jpg', '.jpeg', '.webp', '.bmp', '.tif', '.tiff'];
 const dropzone = document.querySelector<HTMLElement>('#dropzone')!;
 const input = document.querySelector<HTMLInputElement>('#file-input')!;
+const filePanel = document.querySelector<HTMLElement>('#file-panel')!;
 const fileList = document.querySelector<HTMLElement>('#file-list')!;
 const fileCount = document.querySelector<HTMLElement>('#file-count')!;
 const formatSelect = document.querySelector<HTMLSelectElement>('#format-select')!;
@@ -28,6 +29,7 @@ function formatBytes(bytes: number): string {
 }
 
 function renderFiles(): void {
+  filePanel.hidden = files.length === 0;
   fileCount.textContent = String(files.length);
   fileList.innerHTML = files.map((file, index) => `<div class="file-row"><div class="file-type">${pluginId === 'image-convert' ? 'IMG' : 'PDF'}</div><div class="file-info"><span class="file-name">${file.name}</span><span class="file-size">${formatBytes(file.size)}</span></div><button class="remove-file" data-remove="${index}" aria-label="Remove ${file.name}">×</button></div>`).join('');
   document.querySelectorAll<HTMLButtonElement>('[data-remove]').forEach((button) => button.addEventListener('click', () => { files.splice(Number(button.dataset.remove), 1); renderFiles(); }));
@@ -92,3 +94,22 @@ document.querySelector('#clear-files')?.addEventListener('click', () => { files 
 runButton.addEventListener('click', () => void run());
 document.querySelector('#download-all')?.addEventListener('click', () => { if (outputs.length && window.alltools) void window.alltools.files.saveAll(outputs); });
 renderFiles();
+
+const themeToggle = document.querySelector<HTMLButtonElement>('#theme-toggle');
+const themeLabel = themeToggle?.querySelector<HTMLElement>('.theme-label');
+const themeSymbol = themeToggle?.querySelector<HTMLElement>('.theme-symbol');
+function applyTheme(theme: 'dark' | 'light'): void {
+  document.documentElement.dataset.theme = theme;
+  if (themeLabel) themeLabel.textContent = theme === 'dark' ? 'Use light mode' : 'Use dark mode';
+  if (themeSymbol) themeSymbol.textContent = theme === 'dark' ? '☼' : '◐';
+  themeToggle?.setAttribute('aria-label', theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode');
+  localStorage.setItem('alltools-theme', theme);
+}
+applyTheme(localStorage.getItem('alltools-theme') === 'light' ? 'light' : 'dark');
+themeToggle?.addEventListener('click', () => applyTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'));
+document.addEventListener('keydown', (event) => {
+  if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 't') {
+    event.preventDefault();
+    applyTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark');
+  }
+});
