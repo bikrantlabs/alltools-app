@@ -1,0 +1,51 @@
+name: Design proposal
+description: Propose a UI, UX, interaction, accessibility, or information-architecture change.
+title: "design: "
+labels:
+  - type: design
+  - status: triage
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Design problem
+      description: What feels confusing, inconsistent, slow, or visually wrong today?
+    validations:
+      required: true
+  - type: textarea
+    id: direction
+    attributes:
+      label: Proposed direction
+      description: Describe hierarchy, behavior, layout, motion, and content changes.
+    validations:
+      required: true
+  - type: textarea
+    id: references
+    attributes:
+      label: References or visual evidence
+      description: Add screenshots, links, sketches, or examples. Do not upload private information.
+    validations:
+      required: false
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Review criteria
+      placeholder: |
+        - [ ] Consistent with DESIGN.md
+        - [ ] Works in dark and light themes
+        - [ ] Keyboard and accessibility behavior considered
+        - [ ] Responsive behavior described
+    validations:
+      required: true
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Scope
+      options:
+        - One tool screen
+        - Catalog/workbench
+        - Global design system
+        - Settings/preferences
+        - Packaging/onboarding
+    validations:
+      required: true

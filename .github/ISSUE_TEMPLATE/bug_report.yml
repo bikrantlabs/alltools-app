@@ -1,0 +1,74 @@
+name: Bug report
+description: Report behavior that does not match the intended workflow.
+title: "bug: "
+labels:
+  - type: bug
+  - status: triage
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: What happened?
+      description: State the failure plainly and include the affected tool or screen.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open ...
+        2. Select ...
+        3. Click ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Logs, screenshots, or sample files
+      description: Remove private file contents and secrets before posting.
+    validations:
+      required: false
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      options:
+        - Windows
+        - Linux
+        - Both
+        - Development environment only
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: AllTools version or commit
+      placeholder: v0.2.0 or commit SHA
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Likely area
+      options:
+        - React UI
+        - Electron main/preload
+        - Plugin lifecycle
+        - Python plugin
+        - Packaging
+        - Unsure
+    validations:
+      required: true

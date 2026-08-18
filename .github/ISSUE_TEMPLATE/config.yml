@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: AllTools development workflow
+    url: https://github.com/bikrantlabs/alltools-app/blob/main/docs/DEVELOPMENT_WORKFLOW.md
+    about: Read how to file requests, bugs, design proposals, and cross-repository work.
