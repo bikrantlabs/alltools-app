@@ -205,3 +205,25 @@ if (window.alltools?.catalog?.list) {
 } else {
   render();
 }
+
+const themeToggle = document.querySelector<HTMLButtonElement>('#theme-toggle');
+const themeLabel = themeToggle?.querySelector<HTMLElement>('.theme-label');
+const themeSymbol = themeToggle?.querySelector<HTMLElement>('.theme-symbol');
+
+function applyTheme(theme: 'dark' | 'light'): void {
+  document.documentElement.dataset.theme = theme;
+  if (themeLabel) themeLabel.textContent = theme === 'dark' ? 'Use light mode' : 'Use dark mode';
+  if (themeSymbol) themeSymbol.textContent = theme === 'dark' ? '☼' : '◐';
+  themeToggle?.setAttribute('aria-label', theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode');
+  localStorage.setItem('alltools-theme', theme);
+}
+
+const storedTheme = localStorage.getItem('alltools-theme');
+applyTheme(storedTheme === 'light' ? 'light' : 'dark');
+themeToggle?.addEventListener('click', () => applyTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'));
+document.addEventListener('keydown', (event) => {
+  if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 't') {
+    event.preventDefault();
+    applyTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark');
+  }
+});
