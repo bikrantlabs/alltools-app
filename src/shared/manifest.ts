@@ -3,6 +3,19 @@ export type PluginManifest = {
   name: string;
   version: string;
   description: string;
+  author?: string;
+  license?: string;
+  distribution?: {
+    channel?: 'bundled' | 'catalog' | 'local-development';
+    installScope?: 'per-user';
+    requiresApproval?: boolean;
+    updatePolicy?: 'manual' | 'notify' | 'automatic';
+  };
+  dependencies?: {
+    sharedRuntime?: string;
+    pythonPackages?: string[];
+    models?: string[];
+  };
   runtime: {
     type: 'python';
     packageManager: 'uv';
@@ -21,7 +34,10 @@ export type PluginManifest = {
   ui: {
     mode: 'generic-form' | 'dedicated-screen';
     screenId?: string;
-    category?: 'pdf' | 'image' | 'document' | 'other';
+    category?: 'pdf' | 'image' | 'document' | 'audio' | 'video' | 'archive' | 'developer' | 'other';
+    supportsBatch?: boolean;
+    supportsDragAndDrop?: boolean;
+    favorite?: boolean;
   };
   job: {
     inputSchema: Record<string, unknown>;

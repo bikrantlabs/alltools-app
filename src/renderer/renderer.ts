@@ -1,8 +1,8 @@
 export {};
 
-type ToolCategory = 'pdf' | 'image' | 'document' | 'other';
+type ToolCategory = 'pdf' | 'image' | 'document' | 'audio' | 'video' | 'archive' | 'developer' | 'other';
 type Tool = { id: string; name: string; description: string; category: ToolCategory; icon: string; installed: boolean; favorite?: boolean; recent?: boolean };
-type CatalogPlugin = { id: string; name: string; description: string; installed?: boolean; ui?: { category?: ToolCategory } };
+type CatalogPlugin = { id: string; name: string; description: string; installed?: boolean; favorite?: boolean; recent?: boolean; ui?: { category?: ToolCategory; icon?: string } };
 type Catalog = { plugins?: CatalogPlugin[] };
 type ElectronFile = File & { path: string };
 type PdfOutput = { id: string; sourceName: string; path: string; mimeType: string; sizeBytes: number };
@@ -66,8 +66,10 @@ function normalizedCatalog(catalog: Catalog): Tool[] {
     name: plugin.name,
     description: plugin.description,
     category: plugin.ui?.category ?? 'other',
-    icon: plugin.ui?.category === 'pdf' ? 'PDF' : plugin.ui?.category === 'image' ? 'IMG' : 'DOC',
-    installed: plugin.id === 'pdf-to-text' || Boolean(plugin.installed)
+    icon: plugin.ui?.icon ?? (plugin.ui?.category === 'pdf' ? 'PDF' : plugin.ui?.category === 'image' ? 'IMG' : plugin.ui?.category === 'audio' ? 'AUD' : plugin.ui?.category === 'video' ? 'VID' : plugin.ui?.category === 'archive' ? 'ZIP' : plugin.ui?.category === 'developer' ? 'DEV' : 'DOC'),
+    installed: plugin.id === 'pdf-to-text' || Boolean(plugin.installed),
+    favorite: Boolean(plugin.favorite),
+    recent: Boolean(plugin.recent)
   }));
 }
 
