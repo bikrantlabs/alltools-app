@@ -4,7 +4,7 @@
   "description": "Offline-first desktop utility platform with on-demand Python plugins",
   "main": "dist-ts/src/main.js",
   "scripts": {
-    "build": "tsc && tsc -p tsconfig.renderer.json && tsx tools/copy-assets.ts",
+    "build": "rm -rf dist-ts && tsc && tsc -p tsconfig.renderer.json && tsx tools/copy-assets.ts",
     "start": "pnpm build && electron .",
     "dev": "pnpm build && electron .",
     "test": "tsc --noEmit && tsc -p tsconfig.renderer.json --noEmit",
