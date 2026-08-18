@@ -1,16 +1,50 @@
 import { app, BrowserWindow, dialog, ipcMain } from 'electron';
 import path from 'node:path';
-import { cp, mkdir, readFile, stat, mkdtemp } from 'node:fs/promises';
+import { access, cp, mkdir, readFile, stat, mkdtemp, writeFile } from 'node:fs/promises';
 import { spawn } from 'node:child_process';
 import { tmpdir } from 'node:os';
 
- type Catalog = { catalogVersion: number; generatedAt: string | null; plugins: unknown[] };
- type ExtractRequest = { files: Array<{ path: string; name: string }> };
+type CatalogPlugin = { id: string; version?: string; source?: { type?: string; path?: string }; status?: string; [key: string]: unknown };
+type Catalog = { catalogVersion: number; generatedAt: string | null; plugins: CatalogPlugin[] };
+type ExtractRequest = { files: Array<{ path: string; name: string }> };
+type PluginState = { id: string; version: string; status: 'installed' | 'failed'; installedPath?: string; error?: string; updatedAt: string };
+type PluginInstallRequest = { id: string };
+type PluginRunRequest = { pluginId: string; files: Array<{ path: string; name: string }>; options?: Record<string, unknown> };
+
  type ExtractOutput = { id: string; sourceName: string; path: string; mimeType: string; sizeBytes: number };
  type ProtocolEvent = { type: string; jobId?: string; value?: number; message?: string; outputs?: ExtractOutput[]; code?: string };
 
 const isDev = !app.isPackaged;
 let mainWindow: BrowserWindow | null = null;
+
+function pluginStorePath(): string { return path.join(app.getPath('userData'), 'plugins'); }
+function pluginStatePath(): string { return path.join(app.getPath('userData'), 'plugin-state.json'); }
+async function readPluginStates(): Promise<Record<string, PluginState>> {
+  try { return JSON.parse(await readFile(pluginStatePath(), 'utf8')) as Record<string, PluginState>; } catch { return {}; }
+}
+async function writePluginStates(states: Record<string, PluginState>): Promise<void> {
+  await mkdir(app.getPath('userData'), { recursive: true });
+  await writeFile(pluginStatePath(), JSON.stringify(states, null, 2), 'utf8');
+}
+async function loadCatalog(): Promise<Catalog> {
+  const candidates = [
+    path.resolve(app.getAppPath(), '..', 'alltools-plugins', 'catalog', 'catalog.json'),
+    path.resolve(__dirname, 'catalog', 'catalog.json')
+  ];
+  for (const catalogPath of candidates) {
+    try { return JSON.parse(await readFile(catalogPath, 'utf8')) as Catalog; } catch { /* next source */ }
+  }
+  return { catalogVersion: 1, generatedAt: null, plugins: [] };
+}
+async function runCommand(command: string, args: string[], cwd: string, onOutput: (message: string) => void): Promise<void> {
+  await new Promise<void>((resolve, reject) => {
+    const child = spawn(command, args, { cwd, stdio: ['ignore', 'pipe', 'pipe'] });
+    child.stdout.on('data', (chunk: Buffer) => onOutput(chunk.toString()));
+    child.stderr.on('data', (chunk: Buffer) => onOutput(chunk.toString()));
+    child.on('error', reject);
+    child.on('close', (code) => code === 0 ? resolve() : reject(new Error(`${command} exited with code ${code ?? 'unknown'}`)));
+  });
+}
 
 function createWindow(): void {
   mainWindow = new BrowserWindow({
@@ -38,14 +72,91 @@ function createWindow(): void {
 }
 
 ipcMain.handle('catalog:list', async (): Promise<Catalog> => {
-  const candidates = [
-    path.resolve(app.getAppPath(), '..', 'alltools-plugins', 'catalog', 'catalog.json'),
-    path.resolve(__dirname, 'catalog', 'catalog.json')
-  ];
-  for (const catalogPath of candidates) {
-    try { return JSON.parse(await readFile(catalogPath, 'utf8')) as Catalog; } catch { /* next source */ }
+  const catalog = await loadCatalog();
+  const states = await readPluginStates();
+  return { ...catalog, plugins: catalog.plugins.map((plugin) => ({ ...plugin, ...(states[plugin.id] ? { status: states[plugin.id].status, installed: states[plugin.id].status === 'installed' } : {}) })) };
+});
+
+ipcMain.handle('plugins:install', async (event, request: PluginInstallRequest): Promise<PluginState> => {
+  const catalog = await loadCatalog();
+  const plugin = catalog.plugins.find((item) => item.id === request.id);
+  if (!plugin || plugin.source?.type !== 'local-development' || !plugin.source.path) throw new Error('This plugin is not available from an approved local source.');
+  const sourcePath = path.resolve(app.getAppPath(), '..', 'alltools-plugins', plugin.source.path.replace(/^plugins\//, 'plugins/'));
+  const manifestPath = path.join(sourcePath, 'plugin.json');
+  const manifest = JSON.parse(await readFile(manifestPath, 'utf8')) as { id?: string; version?: string; runtime?: { packageManager?: string }; capabilities?: { network?: boolean } };
+  if (manifest.id !== plugin.id) throw new Error('Plugin manifest id does not match the catalog entry.');
+  if (!manifest.version || manifest.runtime?.packageManager !== 'uv' || manifest.capabilities?.network !== false) throw new Error('Plugin manifest failed the AllTools safety checks.');
+  const installPath = path.join(pluginStorePath(), manifest.id, manifest.version);
+  const states = await readPluginStates();
+  try {
+    event.sender.send('plugins:install-progress', { id: manifest.id, value: 0.1, message: 'Validating plugin manifest' });
+    await mkdir(path.dirname(installPath), { recursive: true });
+    await cp(sourcePath, installPath, { recursive: true, force: true });
+    event.sender.send('plugins:install-progress', { id: manifest.id, value: 0.45, message: 'Preparing isolated plugin environment' });
+    const backendPath = path.join(installPath, 'backend');
+    await access(backendPath);
+    await runCommand('uv', ['sync', '--directory', backendPath], installPath, (message) => event.sender.send('plugins:install-log', { id: manifest.id, message }));
+    const state: PluginState = { id: manifest.id, version: manifest.version, status: 'installed', installedPath: installPath, updatedAt: new Date().toISOString() };
+    states[manifest.id] = state;
+    await writePluginStates(states);
+    event.sender.send('plugins:install-progress', { id: manifest.id, value: 1, message: 'Plugin installed and ready offline' });
+    return state;
+  } catch (error) {
+    const state: PluginState = { id: manifest.id, version: manifest.version, status: 'failed', error: error instanceof Error ? error.message : 'Plugin installation failed', updatedAt: new Date().toISOString() };
+    states[manifest.id] = state;
+    await writePluginStates(states);
+    event.sender.send('plugins:install-progress', { id: manifest.id, value: 1, message: state.error });
+    return state;
   }
-  return { catalogVersion: 1, generatedAt: null, plugins: [] };
+});
+
+ipcMain.handle('plugins:states', async (): Promise<Record<string, PluginState>> => readPluginStates());
+
+ipcMain.handle('plugins:run', async (event, request: PluginRunRequest): Promise<{ outputs: ExtractOutput[] }> => {
+  const states = await readPluginStates();
+  const state = states[request.pluginId];
+  if (!state || state.status !== 'installed' || !state.installedPath) throw new Error('Install this plugin before running it.');
+  const manifest = JSON.parse(await readFile(path.join(state.installedPath, 'plugin.json'), 'utf8')) as { entrypoint?: { command?: string; protocolVersion?: number } };
+  const command = manifest.entrypoint?.command ?? '';
+  const moduleMatch = command.match(/^python\\s+-m\\s+([A-Za-z0-9_.-]+)$/);
+  if (!moduleMatch || manifest.entrypoint?.protocolVersion !== 1) throw new Error('The installed plugin entrypoint is invalid.');
+  const jobDirectory = await mkdtemp(path.join(tmpdir(), `alltools-${request.pluginId}-`));
+  const inputDirectory = path.join(jobDirectory, 'input');
+  const outputDirectory = path.join(jobDirectory, 'output');
+  await mkdir(inputDirectory, { recursive: true });
+  await mkdir(outputDirectory, { recursive: true });
+  const inputs: Array<{ id: string; path: string; mimeType: string }> = [];
+  for (const [index, file] of request.files.entries()) {
+    const stagedPath = path.join(inputDirectory, `${index}-${path.basename(file.name)}`);
+    await cp(file.path, stagedPath);
+    inputs.push({ id: `source-${index + 1}`, path: stagedPath, mimeType: 'application/octet-stream' });
+  }
+  const jobId = `${request.pluginId}-${Date.now()}`;
+  const payload = { type: 'start', protocolVersion: 1, jobId, jobDirectory, inputs, options: request.options ?? {}, outputDirectory };
+  const child = spawn('uv', ['run', '--directory', path.join(state.installedPath, 'backend'), '--frozen', 'python', '-m', moduleMatch[1]], { cwd: jobDirectory, stdio: ['pipe', 'pipe', 'pipe'] });
+  child.stdin.write(`${JSON.stringify(payload)}\\n`);
+  child.stdin.end();
+  return await new Promise((resolve, reject) => {
+    let buffer = '';
+    let completed: ExtractOutput[] | null = null;
+    child.stdout.on('data', (chunk: Buffer) => {
+      buffer += chunk.toString();
+      const lines = buffer.split('\\n');
+      buffer = lines.pop() ?? '';
+      for (const line of lines) {
+        if (!line.trim()) continue;
+        try {
+          const message = JSON.parse(line) as ProtocolEvent;
+          if (message.type === 'progress') event.sender.send('plugins:run-progress', { id: request.pluginId, value: message.value ?? 0, message: message.message ?? '' });
+          if (message.type === 'completed') completed = message.outputs ?? [];
+          if (message.type === 'failed') reject(new Error(message.message ?? message.code ?? 'Plugin job failed.'));
+        } catch { /* malformed plugin output is handled by process exit */ }
+      }
+    });
+    child.stderr.on('data', (chunk: Buffer) => event.sender.send('plugins:run-log', { id: request.pluginId, message: chunk.toString() }));
+    child.on('error', (error) => reject(new Error(`Could not start plugin: ${error.message}`)));
+    child.on('close', (code) => completed ? resolve({ outputs: completed }) : reject(new Error(code === 0 ? 'Plugin did not return outputs.' : 'Plugin process stopped unexpectedly.')));
+  });
 });
 
 ipcMain.handle('pdf-to-text:extract', async (event, request: ExtractRequest): Promise<{ outputs: ExtractOutput[] }> => {

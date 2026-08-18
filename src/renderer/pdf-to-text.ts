@@ -7,6 +7,10 @@ declare global {
   interface Window {
     alltools?: {
       catalog: { list: () => Promise<unknown> };
+      plugins: {
+        install: (id: string) => Promise<{ status: 'installed' | 'failed'; error?: string }>;
+        onProgress: (listener: (update: { id: string; value: number; message: string }) => void) => () => void;
+      };
       pdfToText: {
         extract: (files: Array<{ path: string; name: string }>) => Promise<{ outputs: PdfOutput[] }>;
         onProgress: (listener: (update: { value: number; message: string }) => void) => () => void;

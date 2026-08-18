@@ -1,7 +1,7 @@
 export {};
 
 type ToolCategory = 'pdf' | 'image' | 'document' | 'audio' | 'video' | 'archive' | 'developer' | 'other';
-type Tool = { id: string; name: string; description: string; category: ToolCategory; icon: string; installed: boolean; status?: 'installed' | 'available' | 'planned' | 'incompatible' | 'failed'; favorite?: boolean; recent?: boolean };
+type Tool = { id: string; name: string; description: string; category: ToolCategory; icon: string; installed: boolean; status?: 'installed' | 'available' | 'planned' | 'incompatible' | 'failed'; favorite?: boolean; recent?: boolean; installing?: boolean };
 type CatalogPlugin = { id: string; name: string; description: string; installed?: boolean; status?: 'installed' | 'available' | 'planned' | 'incompatible' | 'failed'; favorite?: boolean; recent?: boolean; ui?: { category?: ToolCategory; icon?: string } };
 type Catalog = { plugins?: CatalogPlugin[] };
 type ElectronFile = File & { path: string };
@@ -10,6 +10,10 @@ declare global {
   interface Window {
     alltools?: {
       catalog: { list: () => Promise<unknown> };
+      plugins: {
+        install: (id: string) => Promise<{ status: 'installed' | 'failed'; error?: string }>;
+        onProgress: (listener: (update: { id: string; value: number; message: string }) => void) => () => void;
+      };
       pdfToText: {
         extract: (files: Array<{ path: string; name: string }>) => Promise<{ outputs: PdfOutput[] }>;
         onProgress: (listener: (update: { value: number; message: string }) => void) => () => void;
@@ -30,6 +34,7 @@ let query = '';
 let selectedFiles: ElectronFile[] = [];
 let extractedOutputs: PdfOutput[] = [];
 let removeProgressListener: (() => void) | undefined;
+let removePluginProgressListener: (() => void) | undefined;
 
 const grid = document.querySelector<HTMLElement>('#tool-grid')!;
 const count = document.querySelector<HTMLElement>('#tool-count')!;
@@ -89,7 +94,7 @@ function render(): void {
   titleElement.textContent = activeCategory ? `${activeCategory[0].toUpperCase()}${activeCategory.slice(1)} tools` : activeView === 'all' ? 'All tools' : `${activeView[0].toUpperCase()}${activeView.slice(1)}`;
   countElement.textContent = String(visible.length);
   gridElement.innerHTML = visible.length ? visible.map((tool) => `
-    <article class="tool-card">
+    <article class="tool-card ${tool.installing ? 'is-installing' : ''}">
       <div class="tool-head"><div class="tool-icon ${tool.category}">${tool.icon}</div><button class="tool-action" aria-label="Add ${tool.name} to favorites" data-favorite="${tool.id}">${tool.favorite ? '★' : '☆'}</button></div>
       <h3>${tool.name}</h3><p>${tool.description}</p>
       <div class="tool-footer"><span class="tool-status">${tool.status === 'installed' ? 'Ready offline' : tool.status === 'planned' ? 'Planned for a later wave' : tool.status === 'incompatible' ? 'Not compatible with this device' : tool.status === 'failed' ? 'Install failed — retry later' : 'Available to download'}</span>${tool.installed ? `<button class="download-button" data-open-tool="${tool.id}">Open tool</button>` : tool.status === 'planned' || tool.status === 'incompatible' ? '' : `<button class="download-button" data-download="${tool.id}">Download</button>`}</div>
@@ -102,11 +107,40 @@ function render(): void {
     render();
   }));
   document.querySelectorAll<HTMLButtonElement>('[data-open-tool]').forEach((button) => button.addEventListener('click', () => {
-    if (button.dataset.openTool === 'pdf-to-text') window.location.href = './pdf-to-text.html';
+    const toolId = button.dataset.openTool;
+    if (toolId === 'pdf-to-text') window.location.href = './pdf-to-text.html';
+    else if (toolId === 'pdf-merge' || toolId === 'image-convert') window.location.href = `./generic-tool.html?plugin=${encodeURIComponent(toolId)}`;
   }));
   document.querySelectorAll<HTMLButtonElement>('[data-download]').forEach((button) => button.addEventListener('click', () => {
-    button.textContent = 'Download coming next';
+    const tool = tools.find((item) => item.id === button.dataset.download);
+    if (!tool || !window.alltools?.plugins?.install) return;
+    tool.installing = true;
+    tool.status = 'available';
     button.disabled = true;
+    button.textContent = 'Installing…';
+    removePluginProgressListener?.();
+    removePluginProgressListener = window.alltools.plugins.onProgress((update) => {
+      if (update.id !== tool.id) return;
+      button.textContent = update.value >= 1 ? 'Finalizing…' : `Installing ${Math.round(update.value * 100)}%`;
+    });
+    void window.alltools.plugins.install(tool.id).then((state) => {
+      tool.installing = false;
+      tool.status = state.status;
+      tool.installed = state.status === 'installed';
+      button.textContent = state.status === 'installed' ? 'Installed' : 'Retry';
+      removePluginProgressListener?.();
+      removePluginProgressListener = undefined;
+      render();
+    }).catch((error) => {
+      tool.installing = false;
+      tool.status = 'failed';
+      button.disabled = false;
+      button.textContent = 'Retry';
+      removePluginProgressListener?.();
+      removePluginProgressListener = undefined;
+      console.error(error);
+      render();
+    });
   }));
 }
 
