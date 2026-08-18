@@ -1,7 +1,7 @@
-const assert = require('node:assert/strict');
-const { validateManifest } = require('./manifest');
+import assert from 'node:assert/strict';
+import { validateManifest, type PluginManifest } from './manifest';
 
-const validManifest = {
+const validManifest: PluginManifest = {
   id: 'pdf-to-text',
   name: 'PDF to Text',
   version: '0.1.0',
@@ -14,5 +14,5 @@ const validManifest = {
 };
 
 assert.equal(validateManifest(validManifest), true);
-assert.throws(() => validateManifest({ ...validManifest, capabilities: { network: true, filesystem: 'job-directory-only' } }));
+assert.throws(() => validateManifest({ ...validManifest, capabilities: { network: true, filesystem: 'job-directory-only' } } as never));
 console.log('manifest validation passed');

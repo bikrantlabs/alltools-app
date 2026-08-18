@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AllTools</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="brand"><span class="brand-mark">A</span><span>AllTools</span></div>
+        <nav class="nav-list" aria-label="Primary navigation">
+          <button class="nav-item active" data-view="all"><span>⌘</span> All tools</button>
+          <button class="nav-item" data-view="recent"><span>◷</span> Recent</button>
+          <button class="nav-item" data-view="favorites"><span>☆</span> Favorites</button>
+        </nav>
+        <div class="sidebar-section-label">Categories</div>
+        <nav class="nav-list" aria-label="Tool categories">
+          <button class="nav-item category" data-category="pdf"><span class="category-dot pdf"></span> PDF</button>
+          <button class="nav-item category" data-category="image"><span class="category-dot image"></span> Images</button>
+          <button class="nav-item category" data-category="document"><span class="category-dot document"></span> Documents</button>
+        </nav>
+        <div class="sidebar-footer"><span class="status-dot"></span> Offline-ready</div>
+      </aside>
+      <main class="main-content">
+        <header class="topbar">
+          <div><p class="eyebrow">UTILITY WORKSPACE</p><h1>Good morning</h1></div>
+          <button class="settings-button">Settings <span>⚙</span></button>
+        </header>
+        <section class="hero-card">
+          <div><p class="eyebrow">YOUR TOOLKIT</p><h2>Make everyday files easier.</h2><p class="hero-copy">Fast, private utilities that run locally on your computer.</p></div>
+          <div class="hero-orbit"><span>PDF</span><span>IMG</span><span>DOC</span></div>
+        </section>
+        <section class="toolbar"><div class="section-title"><h2 id="view-title">All tools</h2><span id="tool-count" class="count-badge">0</span></div><label class="search-box"><span>⌕</span><input id="search-input" type="search" placeholder="Search tools" /></label></section>
+        <section id="tool-grid" class="tool-grid" aria-live="polite"></section>
+      </main>
+    </div>
+    <script src="./renderer.js"></script>
+  </body>
+</html>

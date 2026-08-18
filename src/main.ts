@@ -1,10 +1,16 @@
-const { app, BrowserWindow, ipcMain } = require('electron');
-const path = require('node:path');
-const fs = require('node:fs/promises');
+import { app, BrowserWindow, ipcMain } from 'electron';
+import path from 'node:path';
+import { readFile } from 'node:fs/promises';
+
+type Catalog = {
+  catalogVersion: number;
+  generatedAt: string | null;
+  plugins: unknown[];
+};
 
 const isDev = !app.isPackaged;
 
-function createWindow() {
+function createWindow(): void {
   const window = new BrowserWindow({
     width: 1280,
     height: 820,
@@ -19,19 +25,18 @@ function createWindow() {
     }
   });
 
-  window.loadFile(path.join(__dirname, 'renderer', 'index.html'));
+  void window.loadFile(path.join(__dirname, 'renderer', 'index.html'));
   if (isDev) window.webContents.openDevTools({ mode: 'detach' });
 }
 
-ipcMain.handle('catalog:list', async () => {
+ipcMain.handle('catalog:list', async (): Promise<Catalog> => {
   const candidates = [
     path.resolve(__dirname, '..', '..', 'alltools-plugins', 'catalog', 'catalog.json'),
     path.resolve(__dirname, 'catalog', 'catalog.json')
   ];
   for (const catalogPath of candidates) {
     try {
-      const raw = await fs.readFile(catalogPath, 'utf8');
-      return JSON.parse(raw);
+      return JSON.parse(await readFile(catalogPath, 'utf8')) as Catalog;
     } catch {
       // Try the next catalog source.
     }

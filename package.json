@@ -2,24 +2,47 @@
   "name": "alltools-desktop",
   "version": "0.1.0",
   "description": "Offline-first desktop utility platform with on-demand Python plugins",
-  "main": "src/main.js",
+  "main": "dist-ts/src/main.js",
   "scripts": {
-    "start": "electron .",
-    "dev": "electron .",
-    "test": "node --check src/main.js && node --check src/preload.js",
-    "dist:linux": "electron-builder --linux AppImage --x64",
-    "dist:win": "electron-builder --win nsis --x64"
+    "build": "tsc && tsx tools/copy-assets.ts",
+    "start": "pnpm build && electron .",
+    "dev": "pnpm build && electron .",
+    "test": "tsc --noEmit",
+    "test:manifest": "tsx src/shared/manifest.test.ts",
+    "test:supervisor": "python3 runtime/test_supervisor.py",
+    "dist:linux": "pnpm build && electron-builder --linux AppImage --x64",
+    "dist:win": "pnpm build && electron-builder --win nsis --x64"
   },
   "build": {
     "appId": "com.alltools.desktop",
     "productName": "AllTools",
-    "files": ["src/**/*", "runtime/**/*", "package.json"],
-    "linux": { "target": ["AppImage"], "category": "Utility" },
-    "win": { "target": ["nsis"] },
-    "nsis": { "perMachine": false, "oneClick": false, "allowToChangeInstallationDirectory": true }
+    "files": [
+      "dist-ts/**/*",
+      "runtime/**/*",
+      "package.json"
+    ],
+    "linux": {
+      "target": [
+        "AppImage"
+      ],
+      "category": "Utility"
+    },
+    "win": {
+      "target": [
+        "nsis"
+      ]
+    },
+    "nsis": {
+      "perMachine": false,
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
   },
   "devDependencies": {
+    "@types/node": "^26.2.0",
     "electron": "^31.0.0",
-    "electron-builder": "^25.0.0"
+    "electron-builder": "^25.0.0",
+    "tsx": "^4.23.12",
+    "typescript": "^7.0.2"
   }
 }

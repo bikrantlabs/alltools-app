@@ -20,5 +20,5 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm test
-      - run: node src/shared/manifest.test.js
-      - run: python3 runtime/test_supervisor.py
+      - run: pnpm test:manifest
+      - run: pnpm test:supervisor
