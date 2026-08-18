@@ -1,4 +1,4 @@
-import { app, BrowserWindow, dialog, ipcMain } from 'electron';
+import { app, BrowserWindow, dialog, ipcMain, session } from 'electron';
 import path from 'node:path';
 import { access, cp, mkdir, readFile, stat, mkdtemp, writeFile } from 'node:fs/promises';
 import { spawn } from 'node:child_process';
@@ -61,6 +61,10 @@ function createWindow(): void {
     }
   });
 
+  const strictCsp = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self';";
+  session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
+    callback({ responseHeaders: { ...details.responseHeaders, 'Content-Security-Policy': [strictCsp] } });
+  });
   mainWindow.webContents.on('console-message', (_event, level, message, line, sourceId) => {
     if (level >= 2) console.error(`[renderer:${level}] ${sourceId}:${line} ${message}`);
   });
@@ -68,7 +72,7 @@ function createWindow(): void {
     console.error(`[renderer-gone] ${details.reason}`);
   });
   void mainWindow.loadFile(path.join(__dirname, 'renderer', 'index.html'));
-  if (isDev) mainWindow.webContents.openDevTools({ mode: 'detach' });
+  if (isDev && process.env.ALLTOOLS_DEVTOOLS === '1') mainWindow.webContents.openDevTools({ mode: 'detach' });
 }
 
 ipcMain.handle('catalog:list', async (): Promise<Catalog> => {

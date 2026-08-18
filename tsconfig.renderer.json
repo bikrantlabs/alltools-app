@@ -4,10 +4,11 @@
     "module": "ESNext",
     "moduleResolution": "Bundler",
     "lib": ["ES2022", "DOM"],
-    "types": [],
-    "rootDir": "src/renderer",
-    "outDir": "dist-ts/src/renderer"
+    "types": ["vite/client"],
+    "jsx": "react-jsx",
+    "rootDir": "src/renderer/src",
+    "outDir": "dist-electron/renderer"
   },
-  "include": ["src/renderer/renderer.ts", "src/renderer/pdf-to-text.ts", "src/renderer/pdf-merge.ts", "src/renderer/image-convert.ts"],
+  "include": ["src/renderer/src/**/*.ts", "src/renderer/src/**/*.tsx"],
   "exclude": []
 }

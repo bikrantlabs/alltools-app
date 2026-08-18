@@ -5,46 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self';" />
     <title>AllTools · Workbench</title>
-    <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
-    <div class="app-shell catalog-shell">
-      <aside class="sidebar">
-        <div class="brand"><span class="brand-mark">A</span><span>AllTools</span><span class="brand-index">01</span></div>
-        <div class="sidebar-rule"></div>
-        <div class="sidebar-label">INDEX</div>
-        <nav class="nav-list" aria-label="Primary navigation">
-          <button class="nav-item active" data-view="all"><span class="nav-code">01</span><span>All tools</span><span class="nav-count">1</span></button>
-          <button class="nav-item" data-view="recent"><span class="nav-code">02</span><span>Recent</span></button>
-          <button class="nav-item" data-view="favorites"><span class="nav-code">03</span><span>Saved</span></button>
-        </nav>
-        <div class="sidebar-label category-label">FILTER</div>
-        <nav class="nav-list" aria-label="Tool categories">
-          <button class="nav-item category" data-category="pdf"><span class="category-dot pdf"></span><span>PDF</span><span class="category-key">P</span></button>
-          <button class="nav-item category" data-category="image"><span class="category-dot image"></span><span>Images</span><span class="category-key">I</span></button>
-          <button class="nav-item category" data-category="document"><span class="category-dot document"></span><span>Documents</span><span class="category-key">D</span></button>
-        </nav>
-        <div class="sidebar-bottom"><div class="local-mark"><span class="local-led"></span><div><strong>LOCAL MODE</strong><small>Nothing leaves this machine.</small></div></div><button id="theme-toggle" class="theme-toggle" type="button"><span class="theme-symbol">◐</span><span class="theme-label">Use light mode</span><span class="theme-key">⌘T</span></button><button class="nav-item muted"><span class="nav-code">··</span><span>Settings</span></button><div class="sidebar-version">ALLTOOLS / 0.1</div></div>
-      </aside>
-      <main class="main-content">
-        <header class="topbar"><div><p class="overline"><span class="registration-mark"></span> FILE WORKBENCH / 01</p><h1>Tools for the files<br /><span>in front of you.</span></h1></div><div class="topbar-meta"><span class="clock-label">LOCAL&nbsp; · &nbsp;READY</span><button class="settings-button">Settings <span>⌘,</span></button></div></header>
-        <section class="workbench-panel">
-          <div class="panel-index">A / 01</div>
-          <div class="panel-copy"><p class="eyebrow">START WITH A FILE</p><h2>Do one useful thing.</h2><p>Open a tool, keep the source on this device, and leave with a finished file.</p><button class="panel-action" data-category="pdf">Open PDF tools <span>↗</span></button></div>
-          <div class="panel-diagram" aria-hidden="true"><div class="diagram-cross cross-a"></div><div class="diagram-cross cross-b"></div><div class="diagram-ring ring-a"></div><div class="diagram-ring ring-b"></div><div class="diagram-line line-a"></div><div class="diagram-line line-b"></div><div class="diagram-label label-a">SOURCE</div><div class="diagram-label label-b">OUTPUT</div><div class="diagram-core">A</div></div>
-          <div class="panel-caption">PRIVATE BY DEFAULT <span>—</span> OFFLINE PROCESSING</div>
-        </section>
-        <section class="catalog-header"><div class="section-title"><p class="overline">AVAILABLE NOW</p><div class="title-line"><h2 id="view-title">All tools</h2><span id="tool-count" class="count-badge">0</span></div></div><label class="search-box"><span>⌕</span><input id="search-input" type="search" placeholder="Find a tool" /><kbd>⌘K</kbd></label></section>
-        <section id="tool-grid" class="tool-grid" aria-live="polite"></section>
-        <section class="catalog-foot"><span class="foot-rule"></span><span>NEW TOOLS ARRIVE AS PLUGINS</span><span class="foot-rule"></span></section>
-        <section id="pdf-workspace" class="tool-workspace" hidden>
-          <div class="workspace-header"><button id="back-to-tools" class="back-button">← Index</button><div><p class="overline">PDF / 01</p><h2>PDF to Text</h2><p>Turn one or more PDFs into plain text files.</p></div><span class="workspace-status"><i></i> LOCAL</span></div>
-          <div id="pdf-dropzone" class="dropzone"><div class="drop-mark"><span>+</span><small>PDF</small></div><div><p class="overline">INTAKE / DROP ZONE</p><h3>Place source files here.</h3><p>Multiple PDFs accepted. Files remain on this device.</p></div><label class="choose-button">Choose files<input id="pdf-input" type="file" accept="application/pdf,.pdf" multiple hidden /></label><span class="drop-corner">01</span></div>
-          <div class="studio-grid"><div id="pdf-file-panel" class="file-panel" hidden><div class="panel-heading"><div><p class="overline">QUEUE</p><h3>Source files</h3></div><span id="pdf-file-count" class="count-badge">0</span></div><div id="pdf-file-list" class="file-list"></div><div class="workspace-actions"><button id="clear-pdf-files" class="secondary-button">Clear queue</button><button id="extract-pdf" class="primary-button">Extract text <span>↗</span></button></div></div><div id="pdf-progress-panel" class="progress-panel" hidden><p class="overline">PROCESS</p><div class="progress-heading"><strong id="pdf-progress-message">Preparing…</strong><span id="pdf-progress-value">0%</span></div><div class="progress-track"><div id="pdf-progress-bar" class="progress-bar"></div></div><p class="progress-note">The source stays local while the plugin works.</p></div></div>
-          <div id="pdf-results-panel" class="file-panel results-panel" hidden><div class="panel-heading"><div><p class="overline">OUTPUT</p><h3>Text files ready</h3></div><button id="download-all-pdf" class="primary-button">Download all <span>↓</span></button></div><div id="pdf-results-list" class="file-list"></div></div>
-        </section>
-      </main>
-    </div>
-    <script type="module" src="./renderer.js"></script>
+    <div id="root"></div>
+    <script type="module" src="./src/main.tsx"></script>
   </body>
 </html>

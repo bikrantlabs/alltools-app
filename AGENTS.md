@@ -8,9 +8,9 @@ The companion plugin repository is `bikrantlabs/alltools-plugins`. Its local dev
 
 ## Technology rules
 
-The Electron application uses TypeScript for all active application, renderer, preload, shared-contract, and build-tool source. Do not add JavaScript application source files. Compiled JavaScript under `dist-ts` is generated output and must not be committed. The renderer must not use Node.js APIs or execute plugin code.
+The Electron application uses TypeScript for all active application, React renderer, preload, shared-contract, and build-tool source. The renderer is built with electron-vite and React under `src/renderer/src`; the main and preload entrypoints remain under `src/main.ts` and `src/preload.ts`. Do not add JavaScript application source files. Compiled JavaScript under `dist-electron` is generated output and must not be committed. The renderer must not use Node.js APIs or execute plugin code.
 
-The application is built with Electron and a light, minimal HTML/CSS renderer. The preload bridge is the only renderer access to privileged Electron functionality. Keep `contextIsolation: true`, `nodeIntegration: false`, and the renderer sandbox enabled.
+The application is built with Electron, electron-vite, React, and TypeScript. The renderer uses a shared dark-first visual system with dedicated React tool workflows rather than separate legacy HTML pages. The preload bridge is the only renderer access to privileged Electron functionality. Keep `contextIsolation: true`, `nodeIntegration: false`, and the renderer sandbox enabled.
 
 ## Stable plugin contract
 
@@ -28,7 +28,7 @@ The current catalog entry is development-local and may later become a versioned 
 
 Desktop work may proceed using mock catalog entries and a local protocol fixture. Do not block UI work on plugin implementation. Plugin work may proceed using protocol test requests and fixture files. When changing a shared contract, update the local copy, its versioned schema, and the relevant contract test in the same change.
 
-Before committing, run `pnpm test`, `pnpm test:manifest`, `pnpm test:supervisor`, and `pnpm build`. Keep commits focused and describe whether a change affects the manifest, job protocol, UI, runtime, packaging, or documentation.
+Before committing, run `pnpm test`, `pnpm test:manifest`, `pnpm test:supervisor`, and `pnpm build`. For packaging changes, run an Electron startup smoke test and verify that `dist-electron/main.js`, `dist-electron/preload.js`, and the bundled React renderer are present in the packaged archive. Keep commits focused and describe whether a change affects the manifest, job protocol, UI, runtime, packaging, or documentation.
 
 ## Do not do
 

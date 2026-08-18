@@ -6,7 +6,7 @@ The application source is TypeScript. Python plugin implementations live in the 
 
 ## Current status
 
-The current development milestone includes the light-themed desktop shell, catalog browsing, the PDF-to-text workspace, multi-file PDF selection, local extraction through the sibling plugin repository, progress reporting, individual downloads, and download-all behavior. The production plugin download and per-user installation lifecycle is planned but not complete.
+The current development milestone includes a React and TypeScript renderer built with electron-vite, the dark-first desktop shell, catalog browsing, dedicated PDF-to-text, PDF Merge, and Image Convert workflows, local plugin installation and execution, progress reporting, individual downloads, and download-all behavior.
 
 ## Repository layout
 
@@ -16,9 +16,12 @@ alltools-desktop/
     main.ts                 # Electron main process and IPC handlers
     preload.ts              # secure renderer bridge
     renderer/
-      index.html
-      renderer.ts           # typed UI controller
-      styles.css
+      index.html             # electron-vite HTML entrypoint
+      src/
+        main.tsx             # React mount point
+        App.tsx              # catalog, routing, and tool workspaces
+        types.ts             # renderer bridge and tool types
+        styles.css           # shared React visual system
     shared/
       manifest.ts           # plugin manifest validation
       manifest.test.ts
@@ -26,8 +29,7 @@ alltools-desktop/
   runtime/
     supervisor.py           # Python plugin process supervisor prototype
     test_supervisor.py
-  tools/
-    copy-assets.ts          # copies HTML/CSS/catalog into compiled output
+  
   docs/                     # extended documentation
   AGENTS.md                 # agent and parallel-development guidance
   package.json
@@ -89,13 +91,13 @@ Do not commit `node_modules`, `dist-ts`, or other generated directories.
 
 ## Run the desktop app in development
 
-Compile the TypeScript sources and start Electron:
+Start the electron-vite development server and Electron:
 
 ```bash
 pnpm dev
 ```
 
-The development build uses the local sibling plugin catalog and plugin backend. The Electron main process is compiled to `dist-ts/src/main.js`; the renderer is loaded from the copied files under `dist-ts/src/renderer`.
+The development build uses electron-vite with separate main, preload, and React renderer bundles. The main and preload outputs are written under `dist-electron/`, and the React renderer is emitted under `dist-electron/renderer/`. The local sibling plugin catalog and plugin backend are still used during development.
 
 The first PDF workflow is available by opening **PDF to Text**, adding one or more PDF files through the dropzone, selecting **Extract text**, and downloading the resulting `.txt` files individually or together.
 
@@ -110,7 +112,7 @@ pnpm test:supervisor
 pnpm build
 ```
 
-`pnpm test` runs strict TypeScript compilation without emitting files. `pnpm test:manifest` validates the plugin manifest rules. `pnpm test:supervisor` tests the Python process bridge. `pnpm build` compiles TypeScript and copies the renderer assets into `dist-ts`.
+`pnpm test` runs strict TypeScript compilation for the Electron and React sources. `pnpm test:manifest` validates the plugin manifest rules. `pnpm test:supervisor` tests the Python process bridge. `pnpm build` runs electron-vite and emits the main, preload, and React renderer bundles into `dist-electron/`.
 
 ## Package the desktop app
 
@@ -143,4 +145,4 @@ Keep commits focused. A good commit should describe one area such as `feat: add 
 
 ## Troubleshooting
 
-If the PDF tool shows no available backend, confirm that `alltools-plugins` is a sibling directory and that its PDF environment has been installed with `uv sync --dev`. If the app opens but the renderer is stale, remove `dist-ts` and run `pnpm build` again. If Electron installation scripts are blocked by pnpm, use `pnpm approve-builds --all` and reinstall.
+If a plugin is unavailable, confirm that `alltools-plugins` is a sibling directory and that the requested plugin has a manifest under `plugins/<plugin-id>/plugin.json`. If the app opens with stale renderer output, remove `dist-electron` and run `pnpm build` again. To open DevTools during development, set `ALLTOOLS_DEVTOOLS=1` before running Electron. If pnpm reports ignored dependency build scripts, use `pnpm approve-builds --all` and reinstall.

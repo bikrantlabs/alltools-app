@@ -1,6 +1,7 @@
 node_modules/
 dist/
 dist-ts/
+dist-electron/
 out/
 release/
 .env

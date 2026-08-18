@@ -2,11 +2,12 @@
   "name": "alltools-desktop",
   "version": "0.1.0",
   "description": "Offline-first desktop utility platform with on-demand Python plugins",
-  "main": "dist-ts/src/main.js",
+  "main": "dist-electron/main.js",
   "scripts": {
-    "build": "rm -rf dist-ts && tsc && tsc -p tsconfig.renderer.json && tsx tools/copy-assets.ts",
+    "build": "rm -rf dist-electron && electron-vite build",
     "start": "pnpm build && electron .",
-    "dev": "pnpm build && electron .",
+    "dev": "electron-vite dev",
+    "preview": "electron-vite preview",
     "test": "tsc --noEmit && tsc -p tsconfig.renderer.json --noEmit",
     "test:manifest": "tsx src/shared/manifest.test.ts",
     "test:supervisor": "python3 runtime/test_supervisor.py",
@@ -17,7 +18,7 @@
     "appId": "com.alltools.desktop",
     "productName": "AllTools",
     "files": [
-      "dist-ts/**/*",
+      "dist-electron/**/*",
       "runtime/**/*",
       "package.json"
     ],
@@ -40,9 +41,18 @@
   },
   "devDependencies": {
     "@types/node": "^26.2.0",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
+    "@vitejs/plugin-react": "^5.2.0",
     "electron": "^31.0.0",
     "electron-builder": "^25.0.0",
+    "electron-vite": "^5.0.0",
     "tsx": "^4.23.12",
-    "typescript": "^7.0.2"
+    "typescript": "^7.0.2",
+    "vite": "^7.3.6"
+  },
+  "dependencies": {
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8"
   }
 }
