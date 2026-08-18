@@ -1,9 +1,23 @@
+export {};
+
 type ToolCategory = 'pdf' | 'image' | 'document' | 'other';
 type Tool = { id: string; name: string; description: string; category: ToolCategory; icon: string; installed: boolean; favorite?: boolean; recent?: boolean };
 type CatalogPlugin = { id: string; name: string; description: string; installed?: boolean; ui?: { category?: ToolCategory } };
 type Catalog = { plugins?: CatalogPlugin[] };
 type ElectronFile = File & { path: string };
 type PdfOutput = { id: string; sourceName: string; path: string; mimeType: string; sizeBytes: number };
+declare global {
+  interface Window {
+    alltools?: {
+      catalog: { list: () => Promise<unknown> };
+      pdfToText: {
+        extract: (files: Array<{ path: string; name: string }>) => Promise<{ outputs: PdfOutput[] }>;
+        onProgress: (listener: (update: { value: number; message: string }) => void) => () => void;
+      };
+      files: { save: (output: PdfOutput) => Promise<boolean>; saveAll: (outputs: PdfOutput[]) => Promise<boolean> };
+    };
+  }
+}
 
 const fallbackTools: Tool[] = [
   { id: 'pdf-to-text', name: 'PDF to Text', description: 'Extract readable text from PDF files locally.', category: 'pdf', icon: 'PDF', installed: true },
@@ -25,7 +39,7 @@ const grid = document.querySelector<HTMLElement>('#tool-grid')!;
 const count = document.querySelector<HTMLElement>('#tool-count')!;
 const title = document.querySelector<HTMLElement>('#view-title')!;
 const search = document.querySelector<HTMLInputElement>('#search-input')!;
-const toolbar = document.querySelector<HTMLElement>('.toolbar')!;
+const toolbarEl = document.querySelector<HTMLElement>('.toolbar')!;
 const pdfWorkspace = document.querySelector<HTMLElement>('#pdf-workspace')!;
 const dropzone = document.querySelector<HTMLElement>('#pdf-dropzone')!;
 const fileInput = document.querySelector<HTMLInputElement>('#pdf-input')!;
@@ -98,7 +112,7 @@ function render(): void {
 }
 
 function openPdfWorkspace(): void {
-  toolbar.hidden = true;
+  toolbarEl.hidden = true;
   gridElement.hidden = true;
   pdfWorkspace.hidden = false;
   const tool = tools.find((item) => item.id === 'pdf-to-text');
@@ -107,7 +121,7 @@ function openPdfWorkspace(): void {
 
 function closePdfWorkspace(): void {
   pdfWorkspace.hidden = true;
-  toolbar.hidden = false;
+  toolbarEl.hidden = false;
   gridElement.hidden = false;
 }
 
@@ -130,6 +144,12 @@ function addFiles(files: FileList | File[]): void {
 
 async function extractText(): Promise<void> {
   if (!selectedFiles.length) return;
+  if (!window.alltools?.pdfToText?.extract) {
+    progressPanel.hidden = false;
+    progressMessage.textContent = 'PDF backend is unavailable. Restart the app after running pnpm build.';
+    progressValue.textContent = '—';
+    return;
+  }
   progressPanel.hidden = false;
   resultsPanel.hidden = true;
   progressBar.style.width = '0%';
@@ -162,7 +182,7 @@ function renderResults(): void {
   resultsList.innerHTML = extractedOutputs.map((output) => `<div class="file-row result-row"><div class="file-type">TXT</div><div class="file-info"><span class="file-name">${output.path.split(/[\\/]/).pop() ?? output.sourceName}</span><span class="file-size">${formatBytes(output.sizeBytes)} · from ${output.sourceName}</span></div><button class="download-button" data-save-output="${output.id}">Download</button></div>`).join('');
   document.querySelectorAll<HTMLButtonElement>('[data-save-output]').forEach((button) => button.addEventListener('click', () => {
     const output = extractedOutputs.find((item) => item.id === button.dataset.saveOutput);
-    if (output) void window.alltools.files.save(output);
+    if (output && window.alltools) void window.alltools.files.save(output);
   }));
 }
 
@@ -178,10 +198,14 @@ search.addEventListener('input', (event) => { query = (event.target as HTMLInput
 document.querySelector('#back-to-tools')?.addEventListener('click', closePdfWorkspace);
 document.querySelector('#clear-pdf-files')?.addEventListener('click', () => { selectedFiles = []; extractedOutputs = []; renderSelectedFiles(); resultsPanel.hidden = true; });
 document.querySelector('#extract-pdf')?.addEventListener('click', () => void extractText());
-document.querySelector('#download-all-pdf')?.addEventListener('click', () => { if (extractedOutputs.length) void window.alltools.files.saveAll(extractedOutputs); });
+document.querySelector('#download-all-pdf')?.addEventListener('click', () => { if (extractedOutputs.length && window.alltools) void window.alltools.files.saveAll(extractedOutputs); });
 fileInput.addEventListener('change', () => { if (fileInput.files) addFiles(fileInput.files); fileInput.value = ''; });
 dropzone.addEventListener('dragover', (event) => { event.preventDefault(); dropzone.classList.add('drag-over'); });
 dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag-over'));
 dropzone.addEventListener('drop', (event) => { event.preventDefault(); dropzone.classList.remove('drag-over'); if (event.dataTransfer?.files) addFiles(event.dataTransfer.files); });
 
-void window.alltools.catalog.list().then((catalog) => { tools = normalizedCatalog(catalog as Catalog); render(); }).catch(() => render());
+if (window.alltools?.catalog?.list) {
+  void window.alltools.catalog.list().then((catalog) => { tools = normalizedCatalog(catalog as Catalog); render(); }).catch(() => render());
+} else {
+  render();
+}

@@ -4,10 +4,10 @@
   "description": "Offline-first desktop utility platform with on-demand Python plugins",
   "main": "dist-ts/src/main.js",
   "scripts": {
-    "build": "tsc && tsx tools/copy-assets.ts",
+    "build": "tsc && tsc -p tsconfig.renderer.json && tsx tools/copy-assets.ts",
     "start": "pnpm build && electron .",
     "dev": "pnpm build && electron .",
-    "test": "tsc --noEmit",
+    "test": "tsc --noEmit && tsc -p tsconfig.renderer.json --noEmit",
     "test:manifest": "tsx src/shared/manifest.test.ts",
     "test:supervisor": "python3 runtime/test_supervisor.py",
     "dist:linux": "pnpm build && electron-builder --linux AppImage --x64",

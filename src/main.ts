@@ -27,6 +27,12 @@ function createWindow(): void {
     }
   });
 
+  mainWindow.webContents.on('console-message', (_event, level, message, line, sourceId) => {
+    if (level >= 2) console.error(`[renderer:${level}] ${sourceId}:${line} ${message}`);
+  });
+  mainWindow.webContents.on('render-process-gone', (_event, details) => {
+    console.error(`[renderer-gone] ${details.reason}`);
+  });
   void mainWindow.loadFile(path.join(__dirname, 'renderer', 'index.html'));
   if (isDev) mainWindow.webContents.openDevTools({ mode: 'detach' });
 }
