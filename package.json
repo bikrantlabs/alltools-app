@@ -6,9 +6,20 @@
   "scripts": {
     "start": "electron .",
     "dev": "electron .",
-    "test": "node --check src/main.js && node --check src/preload.js"
+    "test": "node --check src/main.js && node --check src/preload.js",
+    "dist:linux": "electron-builder --linux AppImage --x64",
+    "dist:win": "electron-builder --win nsis --x64"
+  },
+  "build": {
+    "appId": "com.alltools.desktop",
+    "productName": "AllTools",
+    "files": ["src/**/*", "runtime/**/*", "package.json"],
+    "linux": { "target": ["AppImage"], "category": "Utility" },
+    "win": { "target": ["nsis"] },
+    "nsis": { "perMachine": false, "oneClick": false, "allowToChangeInstallationDirectory": true }
   },
   "devDependencies": {
-    "electron": "^31.0.0"
+    "electron": "^31.0.0",
+    "electron-builder": "^25.0.0"
   }
 }
