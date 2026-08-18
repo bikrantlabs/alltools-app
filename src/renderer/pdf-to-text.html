@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self';" />
+    <title>PDF to Text · AllTools</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="app-shell tool-page-shell">
+      <aside class="sidebar">
+        <div class="brand"><div class="brand-mark">A</div><span>AllTools</span></div>
+        <div class="sidebar-label">TOOLKIT</div>
+        <nav class="nav-list"><a class="nav-item" href="./index.html">⌂ <span>All tools</span></a><a class="nav-item active" href="./pdf-to-text.html">▣ <span>PDF tools</span></a><a class="nav-item" href="./index.html#image">◈ <span>Image tools</span></a><a class="nav-item" href="./index.html#document">▤ <span>Documents</span></a></nav>
+        <div class="sidebar-bottom"><div class="sidebar-label">SPACE</div><div class="storage-card"><div class="storage-top"><span>Local storage</span><strong>Ready</strong></div><div class="storage-bar"><span></span></div><small>Files stay on this device</small></div><div class="nav-item muted">⚙ <span>Settings</span></div></div>
+      </aside>
+      <main class="main-content">
+        <section class="tool-workspace dedicated-tool-page">
+          <div class="workspace-header"><a id="back-to-tools" class="back-button" href="./index.html">← Back to tools</a><div><p class="eyebrow">PDF TOOLS</p><h1>PDF to Text</h1><p>Extract text locally from one or multiple PDF files.</p></div></div>
+          <div id="pdf-dropzone" class="dropzone"><div class="drop-icon">↑</div><h3>Drop PDF files here</h3><p>or choose files from your computer</p><label class="choose-button">Choose PDF files<input id="pdf-input" type="file" accept="application/pdf,.pdf" multiple hidden /></label></div>
+          <div id="pdf-file-panel" class="file-panel" hidden><div class="panel-heading"><h3>Selected files</h3><span id="pdf-file-count" class="count-badge">0</span></div><div id="pdf-file-list" class="file-list"></div><div class="workspace-actions"><button id="clear-pdf-files" class="secondary-button">Clear</button><button id="extract-pdf" class="primary-button">Extract text</button></div></div>
+          <div id="pdf-progress-panel" class="progress-panel" hidden><div class="progress-heading"><span id="pdf-progress-message">Preparing extraction…</span><span id="pdf-progress-value">0%</span></div><div class="progress-track"><div id="pdf-progress-bar" class="progress-bar"></div></div></div>
+          <div id="pdf-results-panel" class="file-panel" hidden><div class="panel-heading"><h3>Extracted text</h3><button id="download-all-pdf" class="primary-button">Download all</button></div><div id="pdf-results-list" class="file-list"></div></div>
+        </section>
+      </main>
+    </div>
+    <script type="module" src="./pdf-to-text.js"></script>
+  </body>
+</html>

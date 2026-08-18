@@ -103,7 +103,7 @@ function render(): void {
     render();
   }));
   document.querySelectorAll<HTMLButtonElement>('[data-open-tool]').forEach((button) => button.addEventListener('click', () => {
-    if (button.dataset.openTool === 'pdf-to-text') openPdfWorkspace();
+    if (button.dataset.openTool === 'pdf-to-text') window.location.href = './pdf-to-text.html';
   }));
   document.querySelectorAll<HTMLButtonElement>('[data-download]').forEach((button) => button.addEventListener('click', () => {
     button.textContent = 'Download coming next';

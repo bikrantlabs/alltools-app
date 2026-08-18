@@ -8,6 +8,6 @@
     "rootDir": "src/renderer",
     "outDir": "dist-ts/src/renderer"
   },
-  "include": ["src/renderer/renderer.ts"],
+  "include": ["src/renderer/renderer.ts", "src/renderer/pdf-to-text.ts"],
   "exclude": []
 }
