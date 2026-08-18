@@ -2,49 +2,48 @@
 
 ## Design read
 
-Reading this as: an **Operate** surface for people processing real files, with a **quiet instrument / print-room utility** language, leaning toward **asymmetrical editorial layout and tactile soft-structuralism** rather than SaaS dashboard conventions.
+Reading this as an **Operate** surface for people processing real files, with a **modern macOS utility** language: calm, polished, spatially clear, softly tactile, and native-feeling without imitating a specific Apple application.
 
 ## Chosen world
 
-AllTools is treated as a small digital instrument found on a well-designed workbench: calm enough for repeated use, specific enough to feel made, and visibly local. The system uses warm mineral paper, ink-black structural fields, one committed signal accent (vermillion), and precise linework borrowed from registration marks, index labels, and file-room notation.
+AllTools is a quiet, elegant desktop workbench for local file tasks. The interface should feel like a well-made macOS utility: a warm neutral canvas, translucent-looking surfaces without excessive blur, rounded controls, soft elevation, clean sans typography, and a single purposeful accent. It should feel contemporary and premium through restraint, not decoration.
 
-The visual world is not a hero-led marketing page. The catalog is a working index with a strong opening panel, a deliberate asymmetrical rhythm, and tool cards that feel like labeled instruments. The PDF tool is a three-stage file studio: intake, queue, and output. It should feel like a tray moving through a machine, not a blank upload state.
-
-## Dials
-
-- Design variance: 8
-- Motion intensity: 5
-- Visual density: 5
+The previous retro file-room, registration-mark, hard-offset, mono-index, and neobrutalist visual language is retired. Route identity and local-status indicators remain useful, but they should be presented as subtle modern chips and status pills.
 
 ## Palette
 
-- Paper: `#F1F0EB`
-- Shell: `#FBFAF6`
-- Ink: `#1C2026`
-- Muted ink: `#717775`
-- Hairline: `rgba(28,32,38,.15)`
-- Vermillion signal: `#D9573F`
-- Soft signal: `#F4D8D1`
-- Quiet green status: `#79A68B`
+- App canvas: `#F5F5F7`
+- Primary surface: `#FFFFFF`
+- Secondary surface: `#FAFAFC`
+- Elevated surface: `#FFFFFF`
+- Ink: `#1D1D1F`
+- Secondary ink: `#6E6E73`
+- Hairline: `rgba(29,29,31,.09)`
+- Soft shadow: `0 12px 34px rgba(29,29,31,.07)`
+- Accent: `#5967D8`
+- Accent soft: `#EEF0FF`
+- Success: `#27845D`
+- Success soft: `#E7F5ED`
 
-No gradients are used for visual identity. Texture comes from repeated CSS line patterns, offset hairlines, nested shells, and small registration marks.
+The palette is neutral-first with one indigo accent. No gradients, hard offset shadows, decorative crosses, heavy index labels, or saturated multi-accent card systems.
 
 ## Typography
 
-Use a neutral system sans for reliability in an Operate surface, but use weight, tracking, and scale for authorship. Headings are compact and deliberate; labels are small uppercase index notation; body copy is short and factual. Do not add marketing filler.
+Use the native macOS stack: `-apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", sans-serif`. Use rounded weight and scale rather than novelty fonts. Headings are compact and confident; body copy is short and factual; labels use normal sans with restrained tracking rather than monospaced technical notation.
 
 ## Layout
 
-- Floating content column inside a paper-colored application canvas.
-- Narrow, quiet sidebar with index navigation.
-- Catalog: asymmetric hero/index panel, one large featured tool card, then a compact tool rail.
-- Tool page: left task rail + central queue + right output/status rail on wide windows; collapses to a single ordered column below 900px.
-- Major surfaces use a double-bezel shell: outer tray, inner working surface.
+- Soft gray application canvas with a stable narrow sidebar.
+- Rounded sidebar selection and rounded elevated content panels.
+- Catalog header with a concise welcome and a single clear search control.
+- Tool cards use generous padding, a calm icon tile, compact metadata, and one clear action.
+- Tool page header uses a properly aligned back button, title block, route chip, and local-status pill.
+- PDF workflow uses rounded intake, queue, process, and output surfaces with clear grouping.
 
 ## Motion
 
-Use restrained spring-like transitions with custom cubic-bezier curves. Pattern marks drift a few pixels on hover; cards lift by transform only; queue rows enter with staggered opacity/translate motion; progress uses a moving highlight. Respect `prefers-reduced-motion`.
+Use subtle transform and opacity transitions with a smooth custom curve. Cards lift by 2–3px, buttons compress slightly on press, and progress uses a quiet transform animation. Avoid perpetual decorative motion. Respect `prefers-reduced-motion`.
 
-## Prohibited defaults
+## Copy discipline
 
-No generic gradient hero, no three equal feature cards, no filler “everything useful” copy, no fake metrics, no decorative orbital network as the primary visual, no plain centered uploader, no Bootstrap-style grid, and no invented tool categories beyond the actual product catalog.
+Use product-truth copy only. Avoid filler slogans, invented metrics, fake upcoming features, and generic claims. The interface should explain the current task and its local/offline behavior, not advertise imaginary product breadth.
