@@ -20,11 +20,7 @@ declare global {
 }
 
 const fallbackTools: Tool[] = [
-  { id: 'pdf-to-text', name: 'PDF to Text', description: 'Extract readable text from PDF files locally.', category: 'pdf', icon: 'PDF', installed: true },
-  { id: 'pdf-merge-split', name: 'Merge & Split PDFs', description: 'Combine or separate PDF pages with simple controls.', category: 'pdf', icon: 'PDF', installed: false },
-  { id: 'image-converter', name: 'Image Converter', description: 'Convert, resize, and optimize common image formats.', category: 'image', icon: 'IMG', installed: false },
-  { id: 'background-remover', name: 'Background Remover', description: 'Remove image backgrounds with an optional local model.', category: 'image', icon: 'AI', installed: false },
-  { id: 'document-converter', name: 'Document Converter', description: 'Convert everyday documents without sending them online.', category: 'document', icon: 'DOC', installed: false }
+  { id: 'pdf-to-text', name: 'PDF to Text', description: 'Turn one or more PDFs into plain text files.', category: 'pdf', icon: 'PDF', installed: true }
 ];
 
 let tools: Tool[] = fallbackTools;
@@ -152,13 +148,13 @@ async function extractText(): Promise<void> {
   }
   progressPanel.hidden = false;
   resultsPanel.hidden = true;
-  progressBar.style.width = '0%';
+  progressBar.style.transform = 'scaleX(0)';
   progressValue.textContent = '0%';
   progressMessage.textContent = 'Preparing extraction…';
   removeProgressListener?.();
   removeProgressListener = window.alltools.pdfToText.onProgress((update) => {
     const percentage = Math.round(update.value * 100);
-    progressBar.style.width = `${percentage}%`;
+    progressBar.style.transform = `scaleX(${percentage / 100})`;
     progressValue.textContent = `${percentage}%`;
     progressMessage.textContent = update.message;
   });
@@ -167,7 +163,7 @@ async function extractText(): Promise<void> {
     extractedOutputs = result.outputs;
     renderResults();
     progressMessage.textContent = 'Extraction complete';
-    progressBar.style.width = '100%';
+    progressBar.style.transform = 'scaleX(1)';
     progressValue.textContent = '100%';
   } catch (error) {
     progressMessage.textContent = error instanceof Error ? error.message : 'Extraction failed';
