@@ -1,0 +1,14 @@
+{
+  "name": "alltools-desktop",
+  "version": "0.1.0",
+  "description": "Offline-first desktop utility platform with on-demand Python plugins",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron .",
+    "test": "node --check src/main.js && node --check src/preload.js"
+  },
+  "devDependencies": {
+    "electron": "^31.0.0"
+  }
+}
