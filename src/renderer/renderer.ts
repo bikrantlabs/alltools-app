@@ -1,8 +1,8 @@
 export {};
 
 type ToolCategory = 'pdf' | 'image' | 'document' | 'audio' | 'video' | 'archive' | 'developer' | 'other';
-type Tool = { id: string; name: string; description: string; category: ToolCategory; icon: string; installed: boolean; favorite?: boolean; recent?: boolean };
-type CatalogPlugin = { id: string; name: string; description: string; installed?: boolean; favorite?: boolean; recent?: boolean; ui?: { category?: ToolCategory; icon?: string } };
+type Tool = { id: string; name: string; description: string; category: ToolCategory; icon: string; installed: boolean; status?: 'installed' | 'available' | 'planned' | 'incompatible' | 'failed'; favorite?: boolean; recent?: boolean };
+type CatalogPlugin = { id: string; name: string; description: string; installed?: boolean; status?: 'installed' | 'available' | 'planned' | 'incompatible' | 'failed'; favorite?: boolean; recent?: boolean; ui?: { category?: ToolCategory; icon?: string } };
 type Catalog = { plugins?: CatalogPlugin[] };
 type ElectronFile = File & { path: string };
 type PdfOutput = { id: string; sourceName: string; path: string; mimeType: string; sizeBytes: number };
@@ -67,7 +67,8 @@ function normalizedCatalog(catalog: Catalog): Tool[] {
     description: plugin.description,
     category: plugin.ui?.category ?? 'other',
     icon: plugin.ui?.icon ?? (plugin.ui?.category === 'pdf' ? 'PDF' : plugin.ui?.category === 'image' ? 'IMG' : plugin.ui?.category === 'audio' ? 'AUD' : plugin.ui?.category === 'video' ? 'VID' : plugin.ui?.category === 'archive' ? 'ZIP' : plugin.ui?.category === 'developer' ? 'DEV' : 'DOC'),
-    installed: plugin.id === 'pdf-to-text' || Boolean(plugin.installed),
+    installed: plugin.id === 'pdf-to-text' || Boolean(plugin.installed) || plugin.status === 'installed',
+    status: plugin.id === 'pdf-to-text' ? 'installed' : plugin.status ?? (plugin.installed ? 'installed' : 'available'),
     favorite: Boolean(plugin.favorite),
     recent: Boolean(plugin.recent)
   }));
@@ -91,7 +92,7 @@ function render(): void {
     <article class="tool-card">
       <div class="tool-head"><div class="tool-icon ${tool.category}">${tool.icon}</div><button class="tool-action" aria-label="Add ${tool.name} to favorites" data-favorite="${tool.id}">${tool.favorite ? '★' : '☆'}</button></div>
       <h3>${tool.name}</h3><p>${tool.description}</p>
-      <div class="tool-footer"><span class="tool-status">${tool.installed ? 'Ready offline' : 'Available to download'}</span>${tool.installed ? `<button class="download-button" data-open-tool="${tool.id}">Open tool</button>` : `<button class="download-button" data-download="${tool.id}">Download</button>`}</div>
+      <div class="tool-footer"><span class="tool-status">${tool.status === 'installed' ? 'Ready offline' : tool.status === 'planned' ? 'Planned for a later wave' : tool.status === 'incompatible' ? 'Not compatible with this device' : tool.status === 'failed' ? 'Install failed — retry later' : 'Available to download'}</span>${tool.installed ? `<button class="download-button" data-open-tool="${tool.id}">Open tool</button>` : tool.status === 'planned' || tool.status === 'incompatible' ? '' : `<button class="download-button" data-download="${tool.id}">Download</button>`}</div>
     </article>
   `).join('') : '<div class="empty-state">No tools match this view yet.</div>';
 
