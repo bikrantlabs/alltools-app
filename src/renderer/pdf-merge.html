@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Tool · AllTools</title>
+    <title>Merge PDFs · AllTools</title>
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
@@ -11,22 +11,22 @@
       <main class="main-content tool-page-main">
         <header class="workspace-header">
           <div class="header-back-column"><a id="back-to-tools" class="back-button" href="./index.html"><span class="back-arrow">←</span><span>Back to tools</span></a></div>
-          <div class="tool-identity"><div class="identity-topline"><p id="tool-category" class="overline">TOOL / FILE STUDIO</p><span id="tool-route" class="route-chip">/tools/</span></div><h1 id="tool-title">Tool</h1><p id="tool-description">Local file workflow.</p></div>
-          <div class="header-actions"><div class="workspace-status"><i></i> LOCAL ONLY</div><span class="page-index">TOOL / GENERIC</span></div>
+          <div class="tool-identity"><div class="identity-topline"><p class="overline">PDF / MERGE STUDIO</p><span class="route-chip">/tools/pdf-merge</span></div><h1>Merge PDFs</h1><p>Combine multiple PDF files into one ordered document.</p></div>
+          <div class="header-actions"><div class="workspace-status"><i></i> LOCAL ONLY</div><span class="page-index">TOOL / PDF 02</span></div>
         </header>
         <section class="studio-grid">
           <section class="file-panel">
-            <div class="panel-heading"><div><p class="overline">01 / INPUT</p><h2>Source files</h2></div><span id="file-count" class="count-badge">0</span></div>
-            <div id="dropzone" class="dropzone"><input id="file-input" type="file" multiple hidden /><div class="dropzone-mark">+</div><strong>Drop files here</strong><span>or <button id="choose-files" class="inline-button">choose from your device</button></span></div>
+            <div class="panel-heading"><div><p class="overline">01 / ORDERED INPUT</p><h2>PDF files in merge order</h2></div><span id="file-count" class="count-badge">0</span></div>
+            <div id="dropzone" class="dropzone"><input id="file-input" type="file" accept="application/pdf,.pdf" multiple hidden /><div class="dropzone-mark">+</div><strong>Drop PDFs here</strong><span>or <button id="choose-files" class="inline-button">choose from your device</button></span><small>At least two files · order is preserved</small></div>
             <div id="file-list" class="file-list"></div>
             <div id="options-panel" class="options-panel" hidden><label for="format-select">Output format</label><select id="format-select"><option value="png">PNG</option><option value="jpg">JPEG</option><option value="webp">WebP</option><option value="bmp">BMP</option><option value="tiff">TIFF</option></select></div>
-            <div class="workspace-actions"><button id="clear-files" class="secondary-button">Clear queue</button><button id="run-tool" class="primary-button">Run tool <span>↗</span></button></div>
+            <div class="workspace-actions"><button id="clear-files" class="secondary-button">Clear queue</button><button id="run-tool" class="primary-button">Merge PDFs <span>↗</span></button></div>
           </section>
           <section id="progress-panel" class="progress-panel" hidden><p class="overline">02 / PROCESS</p><div class="progress-heading"><strong id="progress-message">Preparing…</strong><span id="progress-value">0%</span></div><div class="process-graphic"><div class="process-track"><i></i><i></i><i></i></div><div class="process-head"></div></div><div class="progress-track"><div id="progress-bar" class="progress-bar"></div></div><p class="progress-note">Files remain on this device while the plugin works.</p></section>
           <section id="results-panel" class="file-panel" hidden><div class="panel-heading"><div><p class="overline">03 / OUTPUT</p><h2>Results</h2></div></div><div id="results-list" class="file-list"></div><div class="workspace-actions"><button id="download-all" class="primary-button">Download all <span>↗</span></button></div></section>
         </section>
       </main>
     </div>
-    <script src="../../dist-ts/src/renderer/generic-tool.js"></script>
+    <script type="module" src="./pdf-merge.js"></script>
   </body>
 </html>

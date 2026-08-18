@@ -13,6 +13,8 @@ declare global {
       plugins: {
         install: (id: string) => Promise<{ status: 'installed' | 'failed'; error?: string }>;
         onProgress: (listener: (update: { id: string; value: number; message: string }) => void) => () => void;
+        run: (pluginId: string, files: Array<{ path: string; name: string }>, options?: Record<string, unknown>) => Promise<{ outputs: PdfOutput[] }>;
+        onRunProgress: (listener: (update: { id: string; value: number; message: string }) => void) => () => void;
       };
       pdfToText: {
         extract: (files: Array<{ path: string; name: string }>) => Promise<{ outputs: PdfOutput[] }>;
@@ -109,7 +111,8 @@ function render(): void {
   document.querySelectorAll<HTMLButtonElement>('[data-open-tool]').forEach((button) => button.addEventListener('click', () => {
     const toolId = button.dataset.openTool;
     if (toolId === 'pdf-to-text') window.location.href = './pdf-to-text.html';
-    else if (toolId === 'pdf-merge' || toolId === 'image-convert') window.location.href = `./generic-tool.html?plugin=${encodeURIComponent(toolId)}`;
+    else if (toolId === 'pdf-merge') window.location.href = './pdf-merge.html';
+    else if (toolId === 'image-convert') window.location.href = './image-convert.html';
   }));
   document.querySelectorAll<HTMLButtonElement>('[data-download]').forEach((button) => button.addEventListener('click', () => {
     const tool = tools.find((item) => item.id === button.dataset.download);
