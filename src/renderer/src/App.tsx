@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { JSX } from 'react';
 import type { FileInput, FileOutput, PluginProgress, Tool, ToolCategory, ToolStatus } from './types';
+import SettingsDialog from './SettingsDialog';
+import { defaultAppearance, type AppearancePreferences, type FontPreference, type FontSizePreference, type ThemePreference } from './settings';
 import './styles.css';
 
 type LocalFile = File & { path: string };
@@ -30,14 +32,19 @@ function formatBytes(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-function useTheme(): ['dark' | 'light', () => void] {
-  const [theme, setTheme] = useState<'dark' | 'light'>(() => localStorage.getItem('alltools-theme') === 'light' ? 'light' : 'dark');
-  useEffect(() => { document.documentElement.dataset.theme = theme; localStorage.setItem('alltools-theme', theme); }, [theme]);
-  useEffect(() => { const listener = (event: KeyboardEvent) => { if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 't') { event.preventDefault(); setTheme((value) => value === 'dark' ? 'light' : 'dark'); } }; document.addEventListener('keydown', listener); return () => document.removeEventListener('keydown', listener); }, []);
-  return [theme, () => setTheme((value) => value === 'dark' ? 'light' : 'dark')];
+function readAppearance(): AppearancePreferences {
+  try { return { ...defaultAppearance, ...JSON.parse(localStorage.getItem('alltools-appearance') ?? '{}') }; } catch { return defaultAppearance; }
+}
+function useAppearance(): [AppearancePreferences, (next: Partial<AppearancePreferences>) => void] {
+  const [appearance, setAppearance] = useState<AppearancePreferences>(readAppearance);
+  const [systemDark, setSystemDark] = useState(() => window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? true);
+  const resolvedTheme = appearance.theme === 'system' ? (systemDark ? 'dark' : 'light') : appearance.theme;
+  useEffect(() => { document.documentElement.dataset.theme = resolvedTheme; document.documentElement.dataset.font = appearance.font; document.documentElement.dataset.fontSize = appearance.fontSize; localStorage.setItem('alltools-appearance', JSON.stringify(appearance)); }, [appearance, resolvedTheme]);
+  useEffect(() => { const media = window.matchMedia?.('(prefers-color-scheme: dark)'); if (!media) return; const listener = () => setSystemDark(media.matches); media.addEventListener('change', listener); return () => media.removeEventListener('change', listener); }, []);
+  return [appearance, (next) => setAppearance((current) => ({ ...current, ...next }))];
 }
 
-function Sidebar({ activeTool, onNavigate, theme, onToggleTheme }: { activeTool: string | null; onNavigate: (route: string) => void; theme: 'dark' | 'light'; onToggleTheme: () => void }): JSX.Element {
+function Sidebar({ activeTool, onNavigate, theme, onToggleTheme, onOpenSettings }: { activeTool: string | null; onNavigate: (route: string) => void; theme: 'dark' | 'light'; onToggleTheme: () => void; onOpenSettings: () => void }): JSX.Element {
   return <aside className="sidebar">
     <div className="brand"><span className="brand-mark">A</span><span>AllTools</span><span className="brand-index">01</span></div>
     <div className="sidebar-rule" /><div className="sidebar-label">INDEX</div>
@@ -47,7 +54,7 @@ function Sidebar({ activeTool, onNavigate, theme, onToggleTheme }: { activeTool:
       <button className={`nav-item ${activeTool === 'pdf-merge' ? 'active' : ''}`} onClick={() => onNavigate('pdf-merge')}><span className="nav-code">P2</span><span>Merge PDFs</span></button>
       <button className={`nav-item ${activeTool === 'image-convert' ? 'active' : ''}`} onClick={() => onNavigate('image-convert')}><span className="nav-code">I1</span><span>Convert Images</span></button>
     </nav>
-    <div className="sidebar-bottom"><div className="local-mark"><span className="local-led" /><div><strong>LOCAL MODE</strong><small>Nothing leaves this machine.</small></div></div><button id="theme-toggle" className="theme-toggle" onClick={onToggleTheme}><span className="theme-symbol">{theme === 'dark' ? '☼' : '◐'}</span><span>{theme === 'dark' ? 'Use light mode' : 'Use dark mode'}</span><span className="theme-key">⌘T</span></button><div className="sidebar-version">ALLTOOLS / 0.2 · REACT</div></div>
+    <div className="sidebar-bottom"><div className="local-mark"><span className="local-led" /><div><strong>LOCAL MODE</strong><small>Nothing leaves this machine.</small></div></div><button id="theme-toggle" className="theme-toggle" onClick={onToggleTheme}><span className="theme-symbol">{theme === 'dark' ? '☼' : '◐'}</span><span>{theme === 'dark' ? 'Use light mode' : 'Use dark mode'}</span><span className="theme-key">⌘T</span></button><button className="settings-launch" onClick={onOpenSettings}><span className="settings-launch-icon">⚙</span><span>Settings</span><span className="theme-key">⌘,</span></button><div className="sidebar-version">ALLTOOLS / 0.2 · REACT</div></div>
   </aside>;
 }
 
@@ -99,13 +106,17 @@ function Catalog({ tools, onInstall, onOpen }: { tools: Tool[]; onInstall: (tool
 }
 
 export default function App(): JSX.Element {
-  const [theme, toggleTheme] = useTheme();
+  const [appearance, updateAppearance] = useAppearance();
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [route, setRoute] = useState(() => window.location.hash.replace(/^#\/?/, ''));
+  const theme: 'dark' | 'light' = appearance.theme === 'light' ? 'light' : appearance.theme === 'dark' ? 'dark' : (window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+  const toggleTheme = () => updateAppearance({ theme: theme === 'dark' ? 'light' : 'dark' });
   const [tools, setTools] = useState<Tool[]>(fallbackTools);
   useEffect(() => { const onHash = () => setRoute(window.location.hash.replace(/^#\/?/, '')); window.addEventListener('hashchange', onHash); return () => window.removeEventListener('hashchange', onHash); }, []);
   useEffect(() => { void window.alltools.catalog.list().then((catalog) => setTools(normalizeTools(catalog))).catch(() => setTools(fallbackTools)); }, []);
+  useEffect(() => { const listener = (event: KeyboardEvent) => { if ((event.metaKey || event.ctrlKey) && event.key === ',') { event.preventDefault(); setSettingsOpen(true); } if (event.key === 'Escape') setSettingsOpen(false); }; document.addEventListener('keydown', listener); return () => document.removeEventListener('keydown', listener); }, []);
   const navigate = (next: string) => { window.location.hash = next ? `/${next}` : ''; setRoute(next); };
   const install = async (tool: Tool) => { setTools((current) => current.map((item) => item.id === tool.id ? { ...item, installing: true } : item)); const state = await window.alltools.plugins.install(tool.id); setTools((current) => current.map((item) => item.id === tool.id ? { ...item, installing: false, status: state.status as ToolStatus, installed: state.status === 'installed' } : item)); };
   const activeTool = route && ['pdf-to-text', 'pdf-merge', 'image-convert'].includes(route) ? route : null;
-  return <div className="app-shell"><Sidebar activeTool={activeTool} onNavigate={navigate} theme={theme} onToggleTheme={toggleTheme} />{activeTool ? <ToolStudio toolId={activeTool} onBack={() => navigate('')} /> : <Catalog tools={tools} onInstall={install} onOpen={navigate} />}</div>;
+  return <div className="app-shell"><Sidebar activeTool={activeTool} onNavigate={navigate} theme={theme} onToggleTheme={toggleTheme} onOpenSettings={() => setSettingsOpen(true)} />{activeTool ? <ToolStudio toolId={activeTool} onBack={() => navigate('')} /> : <Catalog tools={tools} onInstall={install} onOpen={navigate} />}<SettingsDialog open={settingsOpen} appearance={appearance} onChange={updateAppearance} onClose={() => setSettingsOpen(false)} /></div>;
 }
