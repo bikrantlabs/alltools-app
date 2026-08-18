@@ -34,6 +34,13 @@
         </section>
         <section class="toolbar"><div class="section-title"><h2 id="view-title">All tools</h2><span id="tool-count" class="count-badge">0</span></div><label class="search-box"><span>⌕</span><input id="search-input" type="search" placeholder="Search tools" /></label></section>
         <section id="tool-grid" class="tool-grid" aria-live="polite"></section>
+        <section id="pdf-workspace" class="tool-workspace" hidden>
+          <div class="workspace-header"><button id="back-to-tools" class="back-button">← Back to tools</button><div><p class="eyebrow">PDF TOOLS</p><h2>PDF to Text</h2><p>Extract text locally from one or multiple PDF files.</p></div></div>
+          <div id="pdf-dropzone" class="dropzone"><div class="drop-icon">↑</div><h3>Drop PDF files here</h3><p>or choose files from your computer</p><label class="choose-button">Choose PDF files<input id="pdf-input" type="file" accept="application/pdf,.pdf" multiple hidden /></label></div>
+          <div id="pdf-file-panel" class="file-panel" hidden><div class="panel-heading"><h3>Selected files</h3><span id="pdf-file-count" class="count-badge">0</span></div><div id="pdf-file-list" class="file-list"></div><div class="workspace-actions"><button id="clear-pdf-files" class="secondary-button">Clear</button><button id="extract-pdf" class="primary-button">Extract text</button></div></div>
+          <div id="pdf-progress-panel" class="progress-panel" hidden><div class="progress-heading"><span id="pdf-progress-message">Preparing extraction…</span><span id="pdf-progress-value">0%</span></div><div class="progress-track"><div id="pdf-progress-bar" class="progress-bar"></div></div></div>
+          <div id="pdf-results-panel" class="file-panel" hidden><div class="panel-heading"><h3>Extracted text</h3><button id="download-all-pdf" class="primary-button">Download all</button></div><div id="pdf-results-list" class="file-list"></div></div>
+        </section>
       </main>
     </div>
     <script src="./renderer.js"></script>
