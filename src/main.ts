@@ -1,6 +1,6 @@
 import { app, BrowserWindow, dialog, ipcMain, session } from 'electron';
 import path from 'node:path';
-import { access, cp, mkdir, readFile, stat, mkdtemp, writeFile } from 'node:fs/promises';
+import { access, cp, mkdir, readFile, stat, mkdtemp, rename, rm, writeFile } from 'node:fs/promises';
 import { spawn } from 'node:child_process';
 import { tmpdir } from 'node:os';
 
@@ -8,7 +8,7 @@ type CatalogPlugin = { id: string; version?: string; source?: { type?: string; p
 type Catalog = { catalogVersion: number; generatedAt: string | null; plugins: CatalogPlugin[] };
 type ExtractRequest = { files: Array<{ path: string; name: string }> };
 type PluginState = { id: string; version: string; status: 'installed' | 'failed' | 'unavailable'; installedPath?: string; error?: string; updatedAt: string };
-type PluginInstallRequest = { id: string };
+type PluginInstallRequest = { id: string; reinstall?: boolean };
 type PluginRunRequest = { pluginId: string; files: Array<{ path: string; name: string }>; options?: Record<string, unknown> };
 
  type ExtractOutput = { id: string; sourceName: string; path: string; mimeType: string; sizeBytes: number };
@@ -103,20 +103,43 @@ ipcMain.handle('plugins:install', async (event, request: PluginInstallRequest): 
   if (manifest.id !== plugin.id) throw new Error('Plugin manifest id does not match the catalog entry.');
   if (!manifest.version || manifest.runtime?.packageManager !== 'uv' || manifest.capabilities?.network !== false) throw new Error('Plugin manifest failed the AllTools safety checks.');
   const installPath = path.join(pluginStorePath(), manifest.id, manifest.version);
+  const previousState = states[manifest.id];
+  const stagingPath = request.reinstall ? `${installPath}.reinstall-${Date.now()}` : installPath;
   try {
-    event.sender.send('plugins:install-progress', { id: manifest.id, value: 0.1, message: 'Validating plugin manifest' });
+    event.sender.send('plugins:install-progress', { id: manifest.id, value: 0.1, message: request.reinstall ? 'Validating reinstall' : 'Validating plugin manifest' });
     await mkdir(path.dirname(installPath), { recursive: true });
-    await cp(sourcePath, installPath, { recursive: true, force: true });
+    await cp(sourcePath, stagingPath, { recursive: true, force: true });
     event.sender.send('plugins:install-progress', { id: manifest.id, value: 0.45, message: 'Preparing isolated plugin environment' });
-    const backendPath = path.join(installPath, 'backend');
+    const backendPath = path.join(stagingPath, 'backend');
     await access(backendPath);
-    await runCommand('uv', ['sync', '--directory', backendPath], installPath, (message) => event.sender.send('plugins:install-log', { id: manifest.id, message }));
+    await runCommand('uv', ['sync', '--directory', backendPath], stagingPath, (message) => event.sender.send('plugins:install-log', { id: manifest.id, message }));
+    if (request.reinstall) {
+      const backupPath = `${installPath}.backup-${Date.now()}`;
+      let movedPrevious = false;
+      try {
+        try { await rename(installPath, backupPath); movedPrevious = true; } catch { /* no previous directory */ }
+        await rename(stagingPath, installPath);
+        if (movedPrevious) await rm(backupPath, { recursive: true, force: true });
+      } catch (swapError) {
+        await rm(stagingPath, { recursive: true, force: true }).catch(() => undefined);
+        try { await access(installPath); } catch { if (movedPrevious) await rename(backupPath, installPath); }
+        throw swapError;
+      }
+    }
     const state: PluginState = { id: manifest.id, version: manifest.version, status: 'installed', installedPath: installPath, updatedAt: new Date().toISOString() };
     states[manifest.id] = state;
     await writePluginStates(states);
-    event.sender.send('plugins:install-progress', { id: manifest.id, value: 1, message: 'Plugin installed and ready offline' });
+    event.sender.send('plugins:install-progress', { id: manifest.id, value: 1, message: request.reinstall ? 'Plugin reinstalled and ready offline' : 'Plugin installed and ready offline' });
     return state;
   } catch (error) {
+    await rm(stagingPath, { recursive: true, force: true }).catch(() => undefined);
+    if (request.reinstall && previousState?.status === 'installed' && previousState.installedPath) {
+      const preserved: PluginState = { ...previousState, error: `Reinstall failed; previous installation preserved. ${error instanceof Error ? error.message : 'Unknown error'}`, updatedAt: new Date().toISOString() };
+      states[manifest.id] = preserved;
+      await writePluginStates(states);
+      event.sender.send('plugins:install-progress', { id: manifest.id, value: 1, message: preserved.error });
+      return preserved;
+    }
     const state: PluginState = { id: manifest.id, version: manifest.version, status: 'failed', error: error instanceof Error ? error.message : 'Plugin installation failed', updatedAt: new Date().toISOString() };
     states[manifest.id] = state;
     await writePluginStates(states);

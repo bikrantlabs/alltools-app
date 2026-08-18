@@ -21,7 +21,7 @@ export type FileOutput = { id: string; sourceName: string; path: string; mimeTyp
 export type AllToolsApi = {
   catalog: { list: () => Promise<{ plugins?: Array<{ id: string; name: string; description: string; installed?: boolean; status?: ToolStatus; favorite?: boolean; recent?: boolean; ui?: { category?: ToolCategory; icon?: string } }> }> };
   plugins: {
-    install: (id: string) => Promise<{ status: 'installed' | 'failed' | 'unavailable'; error?: string }>;
+    install: (id: string, reinstall?: boolean) => Promise<{ status: 'installed' | 'failed' | 'unavailable'; error?: string }>;
     onProgress: (listener: (update: PluginProgress) => void) => () => void;
     run: (pluginId: string, files: FileInput[], options?: Record<string, unknown>) => Promise<{ outputs: FileOutput[] }>;
     onRunProgress: (listener: (update: PluginProgress) => void) => () => void;

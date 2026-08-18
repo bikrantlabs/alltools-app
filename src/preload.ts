@@ -4,12 +4,12 @@ export type PdfInput = { path: string; name: string };
 export type PdfOutput = { id: string; sourceName: string; path: string; mimeType: string; sizeBytes: number };
 export type ProgressUpdate = { value: number; message: string };
 export type PluginInstallProgress = { id: string; value: number; message: string };
-export type PluginState = { id: string; version: string; status: 'installed' | 'failed'; installedPath?: string; error?: string; updatedAt: string };
+export type PluginState = { id: string; version: string; status: 'installed' | 'failed' | 'unavailable'; installedPath?: string; error?: string; updatedAt: string };
 
 export type AllToolsApi = {
   catalog: { list: () => Promise<unknown> };
   plugins: {
-    install: (id: string) => Promise<PluginState>;
+    install: (id: string, reinstall?: boolean) => Promise<PluginState>;
     states: () => Promise<Record<string, PluginState>>;
     onProgress: (listener: (update: PluginInstallProgress) => void) => () => void;
     onLog: (listener: (update: { id: string; message: string }) => void) => () => void;
@@ -30,7 +30,7 @@ export type AllToolsApi = {
 contextBridge.exposeInMainWorld('alltools', {
   catalog: { list: (): Promise<unknown> => ipcRenderer.invoke('catalog:list') },
   plugins: {
-    install: (id: string): Promise<PluginState> => ipcRenderer.invoke('plugins:install', { id }),
+    install: (id: string, reinstall = false): Promise<PluginState> => ipcRenderer.invoke('plugins:install', { id, reinstall }),
     states: (): Promise<Record<string, PluginState>> => ipcRenderer.invoke('plugins:states'),
     onProgress: (listener: (update: PluginInstallProgress) => void): (() => void) => {
       const callback = (_event: IpcRendererEvent, update: PluginInstallProgress) => listener(update);
