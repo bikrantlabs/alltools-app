@@ -1,8 +1,8 @@
 export {};
 
 type ToolCategory = 'pdf' | 'image' | 'document' | 'audio' | 'video' | 'archive' | 'developer' | 'other';
-type Tool = { id: string; name: string; description: string; category: ToolCategory; icon: string; installed: boolean; status?: 'installed' | 'available' | 'planned' | 'incompatible' | 'failed'; favorite?: boolean; recent?: boolean; installing?: boolean };
-type CatalogPlugin = { id: string; name: string; description: string; installed?: boolean; status?: 'installed' | 'available' | 'planned' | 'incompatible' | 'failed'; favorite?: boolean; recent?: boolean; ui?: { category?: ToolCategory; icon?: string } };
+type Tool = { id: string; name: string; description: string; category: ToolCategory; icon: string; installed: boolean; status?: 'installed' | 'available' | 'planned' | 'incompatible' | 'failed' | 'unavailable'; favorite?: boolean; recent?: boolean; installing?: boolean };
+type CatalogPlugin = { id: string; name: string; description: string; installed?: boolean; status?: 'installed' | 'available' | 'planned' | 'incompatible' | 'failed' | 'unavailable'; favorite?: boolean; recent?: boolean; ui?: { category?: ToolCategory; icon?: string } };
 type Catalog = { plugins?: CatalogPlugin[] };
 type ElectronFile = File & { path: string };
 type PdfOutput = { id: string; sourceName: string; path: string; mimeType: string; sizeBytes: number };
@@ -11,7 +11,7 @@ declare global {
     alltools?: {
       catalog: { list: () => Promise<unknown> };
       plugins: {
-        install: (id: string) => Promise<{ status: 'installed' | 'failed'; error?: string }>;
+        install: (id: string) => Promise<{ status: 'installed' | 'failed' | 'unavailable'; error?: string }>;
         onProgress: (listener: (update: { id: string; value: number; message: string }) => void) => () => void;
         run: (pluginId: string, files: Array<{ path: string; name: string }>, options?: Record<string, unknown>) => Promise<{ outputs: PdfOutput[] }>;
         onRunProgress: (listener: (update: { id: string; value: number; message: string }) => void) => () => void;
@@ -99,7 +99,7 @@ function render(): void {
     <article class="tool-card ${tool.installing ? 'is-installing' : ''}">
       <div class="tool-head"><div class="tool-icon ${tool.category}">${tool.icon}</div><button class="tool-action" aria-label="Add ${tool.name} to favorites" data-favorite="${tool.id}">${tool.favorite ? '★' : '☆'}</button></div>
       <h3>${tool.name}</h3><p>${tool.description}</p>
-      <div class="tool-footer"><span class="tool-status">${tool.status === 'installed' ? 'Ready offline' : tool.status === 'planned' ? 'Planned for a later wave' : tool.status === 'incompatible' ? 'Not compatible with this device' : tool.status === 'failed' ? 'Install failed — retry later' : 'Available to download'}</span>${tool.installed ? `<button class="download-button" data-open-tool="${tool.id}">Open tool</button>` : tool.status === 'planned' || tool.status === 'incompatible' ? '' : `<button class="download-button" data-download="${tool.id}">Download</button>`}</div>
+      <div class="tool-footer"><span class="tool-status">${tool.status === 'installed' ? 'Ready offline' : tool.status === 'planned' ? 'Planned for a later wave' : tool.status === 'incompatible' ? 'Not compatible with this device' : tool.status === 'failed' ? 'Install failed — retry later' : tool.status === 'unavailable' ? 'Unavailable in this workspace' : 'Available to download'}</span>${tool.installed ? `<button class="download-button" data-open-tool="${tool.id}">Open tool</button>` : tool.status === 'planned' || tool.status === 'incompatible' || tool.status === 'unavailable' ? '' : `<button class="download-button" data-download="${tool.id}">Download</button>`}</div>
     </article>
   `).join('') : '<div class="empty-state">No tools match this view yet.</div>';
 
@@ -130,7 +130,7 @@ function render(): void {
       tool.installing = false;
       tool.status = state.status;
       tool.installed = state.status === 'installed';
-      button.textContent = state.status === 'installed' ? 'Installed' : 'Retry';
+      button.textContent = state.status === 'installed' ? 'Installed' : state.status === 'unavailable' ? 'Unavailable' : 'Retry';
       removePluginProgressListener?.();
       removePluginProgressListener = undefined;
       render();

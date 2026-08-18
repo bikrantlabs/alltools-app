@@ -7,7 +7,7 @@ import { tmpdir } from 'node:os';
 type CatalogPlugin = { id: string; version?: string; source?: { type?: string; path?: string }; status?: string; [key: string]: unknown };
 type Catalog = { catalogVersion: number; generatedAt: string | null; plugins: CatalogPlugin[] };
 type ExtractRequest = { files: Array<{ path: string; name: string }> };
-type PluginState = { id: string; version: string; status: 'installed' | 'failed'; installedPath?: string; error?: string; updatedAt: string };
+type PluginState = { id: string; version: string; status: 'installed' | 'failed' | 'unavailable'; installedPath?: string; error?: string; updatedAt: string };
 type PluginInstallRequest = { id: string };
 type PluginRunRequest = { pluginId: string; files: Array<{ path: string; name: string }>; options?: Record<string, unknown> };
 
@@ -74,7 +74,11 @@ function createWindow(): void {
 ipcMain.handle('catalog:list', async (): Promise<Catalog> => {
   const catalog = await loadCatalog();
   const states = await readPluginStates();
-  return { ...catalog, plugins: catalog.plugins.map((plugin) => ({ ...plugin, ...(states[plugin.id] ? { status: states[plugin.id].status, installed: states[plugin.id].status === 'installed' } : {}) })) };
+  return { ...catalog, plugins: catalog.plugins.map((plugin) => {
+    const state = states[plugin.id];
+    const overlay = state && state.status !== 'unavailable' ? { status: state.status, installed: state.status === 'installed' } : {};
+    return { ...plugin, ...overlay };
+  }) };
 });
 
 ipcMain.handle('plugins:install', async (event, request: PluginInstallRequest): Promise<PluginState> => {
@@ -83,11 +87,18 @@ ipcMain.handle('plugins:install', async (event, request: PluginInstallRequest): 
   if (!plugin || plugin.source?.type !== 'local-development' || !plugin.source.path) throw new Error('This plugin is not available from an approved local source.');
   const sourcePath = path.resolve(app.getAppPath(), '..', 'alltools-plugins', plugin.source.path.replace(/^plugins\//, 'plugins/'));
   const manifestPath = path.join(sourcePath, 'plugin.json');
+  const states = await readPluginStates();
+  try { await access(manifestPath); } catch {
+    const state: PluginState = { id: plugin.id, version: plugin.version ?? '0.0.0', status: 'unavailable', error: `The local plugin source is missing: ${plugin.source.path}`, updatedAt: new Date().toISOString() };
+    states[plugin.id] = state;
+    await writePluginStates(states);
+    event.sender.send('plugins:install-progress', { id: plugin.id, value: 1, message: state.error });
+    return state;
+  }
   const manifest = JSON.parse(await readFile(manifestPath, 'utf8')) as { id?: string; version?: string; runtime?: { packageManager?: string }; capabilities?: { network?: boolean } };
   if (manifest.id !== plugin.id) throw new Error('Plugin manifest id does not match the catalog entry.');
   if (!manifest.version || manifest.runtime?.packageManager !== 'uv' || manifest.capabilities?.network !== false) throw new Error('Plugin manifest failed the AllTools safety checks.');
   const installPath = path.join(pluginStorePath(), manifest.id, manifest.version);
-  const states = await readPluginStates();
   try {
     event.sender.send('plugins:install-progress', { id: manifest.id, value: 0.1, message: 'Validating plugin manifest' });
     await mkdir(path.dirname(installPath), { recursive: true });
@@ -118,7 +129,7 @@ ipcMain.handle('plugins:run', async (event, request: PluginRunRequest): Promise<
   if (!state || state.status !== 'installed' || !state.installedPath) throw new Error('Install this plugin before running it.');
   const manifest = JSON.parse(await readFile(path.join(state.installedPath, 'plugin.json'), 'utf8')) as { entrypoint?: { command?: string; protocolVersion?: number } };
   const command = manifest.entrypoint?.command ?? '';
-  const moduleMatch = command.match(/^python\\s+-m\\s+([A-Za-z0-9_.-]+)$/);
+  const moduleMatch = command.match(/^python\s+-m\s+([A-Za-z0-9_.-]+)$/);
   if (!moduleMatch || manifest.entrypoint?.protocolVersion !== 1) throw new Error('The installed plugin entrypoint is invalid.');
   const jobDirectory = await mkdtemp(path.join(tmpdir(), `alltools-${request.pluginId}-`));
   const inputDirectory = path.join(jobDirectory, 'input');
@@ -134,7 +145,7 @@ ipcMain.handle('plugins:run', async (event, request: PluginRunRequest): Promise<
   const jobId = `${request.pluginId}-${Date.now()}`;
   const payload = { type: 'start', protocolVersion: 1, jobId, jobDirectory, inputs, options: request.options ?? {}, outputDirectory };
   const child = spawn('uv', ['run', '--directory', path.join(state.installedPath, 'backend'), '--frozen', 'python', '-m', moduleMatch[1]], { cwd: jobDirectory, stdio: ['pipe', 'pipe', 'pipe'] });
-  child.stdin.write(`${JSON.stringify(payload)}\\n`);
+  child.stdin.write(`${JSON.stringify(payload)}\n`);
   child.stdin.end();
   return await new Promise((resolve, reject) => {
     let buffer = '';
